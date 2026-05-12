@@ -44,7 +44,7 @@ services:
       - tidalcase-network
 
   tidalcase-backend:
-    image: ${TIDALCASE_BACKEND_IMAGE:-ghcr.io/mlongo-metalsistemspa/tidalcase-backend:latest}
+    image: ${TIDALCASE_BACKEND_IMAGE:-ghcr.io/metalsistem-s-p-a/tidalcase-backend:latest}
     container_name: tidalcase-backend
     restart: unless-stopped
     volumes:
@@ -64,7 +64,7 @@ services:
       - tidalcase-redis
 
   tidalcase-frontend:
-    image: ${TIDALCASE_FRONTEND_IMAGE:-ghcr.io/mlongo-metalsistemspa/tidalcase-frontend:latest}
+    image: ${TIDALCASE_FRONTEND_IMAGE:-ghcr.io/metalsistem-s-p-a/tidalcase-frontend:latest}
     container_name: tidalcase-frontend
     restart: unless-stopped
     labels:
@@ -90,7 +90,7 @@ services:
       - tidalcase-network
 
   tidalcase-celery-worker:
-    image: ${TIDALCASE_BACKEND_IMAGE:-ghcr.io/mlongo-metalsistemspa/tidalcase-backend:latest}
+    image: ${TIDALCASE_BACKEND_IMAGE:-ghcr.io/metalsistem-s-p-a/tidalcase-backend:latest}
     container_name: tidalcase-celery-worker
     restart: unless-stopped
     volumes:
@@ -109,7 +109,7 @@ services:
       - tidalcase-redis
 
   tidalcase-celery-beat:
-    image: ${TIDALCASE_BACKEND_IMAGE:-ghcr.io/mlongo-metalsistemspa/tidalcase-backend:latest}
+    image: ${TIDALCASE_BACKEND_IMAGE:-ghcr.io/metalsistem-s-p-a/tidalcase-backend:latest}
     container_name: tidalcase-celery-beat
     restart: unless-stopped
     environment:
@@ -184,7 +184,7 @@ services:
 
   tidalcase-registry:
     profiles: [registry]
-    image: ${TIDALCASE_REGISTRY_IMAGE:-ghcr.io/mlongo-metalsistemspa/tidalcase-registry:latest}
+    image: ${TIDALCASE_REGISTRY_IMAGE:-ghcr.io/metalsistem-s-p-a/tidalcase-registry:latest}
     container_name: tidalcase-registry
     restart: unless-stopped
     environment:
@@ -207,7 +207,7 @@ services:
 
   tidalcase-agent:
     profiles: [agent]
-    image: ${TIDALCASE_AGENT_IMAGE:-ghcr.io/mlongo-metalsistemspa/tidalcase-agent:latest}
+    image: ${TIDALCASE_AGENT_IMAGE:-ghcr.io/metalsistem-s-p-a/tidalcase-agent:latest}
     container_name: tidalcase-agent
     restart: unless-stopped
     user: "root"
@@ -232,7 +232,7 @@ services:
 
   tidalcase-agent-nginx:
     profiles: [agent]
-    image: ${TIDALCASE_AGENT_NGINX_IMAGE:-ghcr.io/mlongo-metalsistemspa/tidalcase-agent-nginx:latest}
+    image: ${TIDALCASE_AGENT_NGINX_IMAGE:-ghcr.io/metalsistem-s-p-a/tidalcase-agent-nginx:latest}
     container_name: tidalcase-agent-nginx
     restart: unless-stopped
     environment:
@@ -249,7 +249,7 @@ services:
 
   tidalcase-agent-celery-worker:
     profiles: [agent]
-    image: ${TIDALCASE_AGENT_IMAGE:-ghcr.io/mlongo-metalsistemspa/tidalcase-agent:latest}
+    image: ${TIDALCASE_AGENT_IMAGE:-ghcr.io/metalsistem-s-p-a/tidalcase-agent:latest}
     container_name: tidalcase-agent-celery-worker
     restart: unless-stopped
     user: "root"
@@ -266,7 +266,7 @@ services:
 
   tidalcase-agent-celery-beat:
     profiles: [agent]
-    image: ${TIDALCASE_AGENT_IMAGE:-ghcr.io/mlongo-metalsistemspa/tidalcase-agent:latest}
+    image: ${TIDALCASE_AGENT_IMAGE:-ghcr.io/metalsistem-s-p-a/tidalcase-agent:latest}
     container_name: tidalcase-agent-celery-beat
     restart: unless-stopped
     user: "root"

@@ -1,6 +1,6 @@
 services:
   tidalcase-agent:
-    image: ghcr.io/mlongo-metalsistemspa/tidalcase-agent:latest
+    image: ghcr.io/metalsistem-s-p-a/tidalcase-agent:latest
     container_name: tidalcase-agent
     restart: unless-stopped
     user: "root"
@@ -24,7 +24,7 @@ services:
       - tidalcase-network
 
   tidalcase-agent-nginx:
-    image: ghcr.io/mlongo-metalsistemspa/tidalcase-agent-nginx:latest
+    image: ghcr.io/metalsistem-s-p-a/tidalcase-agent-nginx:latest
     container_name: tidalcase-agent-nginx
     restart: unless-stopped
     environment:
@@ -49,7 +49,7 @@ services:
       - tidalcase-network
 
   tidalcase-agent-celery-worker:
-    image: ghcr.io/mlongo-metalsistemspa/tidalcase-agent:latest
+    image: ghcr.io/metalsistem-s-p-a/tidalcase-agent:latest
     container_name: tidalcase-agent-celery-worker
     restart: unless-stopped
     user: "root"
@@ -65,7 +65,7 @@ services:
       - redis
 
   tidalcase-agent-celery-beat:
-    image: ghcr.io/mlongo-metalsistemspa/tidalcase-agent:latest
+    image: ghcr.io/metalsistem-s-p-a/tidalcase-agent:latest
     container_name: tidalcase-agent-celery-beat
     restart: unless-stopped
     user: "root"

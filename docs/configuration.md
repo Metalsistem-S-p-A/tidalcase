@@ -82,11 +82,11 @@ If you mirror Tidalcase images into your own registry, set:
 
 | Variable                      | Default |
 | ----------------------------- | ------- |
-| `TIDALCASE_BACKEND_IMAGE`     | `ghcr.io/mlongo-metalsistemspa/tidalcase-backend:latest` |
-| `TIDALCASE_FRONTEND_IMAGE`    | `ghcr.io/mlongo-metalsistemspa/tidalcase-frontend:latest` |
-| `TIDALCASE_AGENT_IMAGE`       | `ghcr.io/mlongo-metalsistemspa/tidalcase-agent:latest` |
-| `TIDALCASE_AGENT_NGINX_IMAGE` | `ghcr.io/mlongo-metalsistemspa/tidalcase-agent-nginx:latest` |
-| `TIDALCASE_REGISTRY_IMAGE`    | `ghcr.io/mlongo-metalsistemspa/tidalcase-registry:latest` |
+| `TIDALCASE_BACKEND_IMAGE`     | `ghcr.io/metalsistem-s-p-a/tidalcase-backend:latest` |
+| `TIDALCASE_FRONTEND_IMAGE`    | `ghcr.io/metalsistem-s-p-a/tidalcase-frontend:latest` |
+| `TIDALCASE_AGENT_IMAGE`       | `ghcr.io/metalsistem-s-p-a/tidalcase-agent:latest` |
+| `TIDALCASE_AGENT_NGINX_IMAGE` | `ghcr.io/metalsistem-s-p-a/tidalcase-agent-nginx:latest` |
+| `TIDALCASE_REGISTRY_IMAGE`    | `ghcr.io/metalsistem-s-p-a/tidalcase-registry:latest` |
 
 The Celery worker and beat services reuse `TIDALCASE_BACKEND_IMAGE`, so one
 override is enough to redirect the whole manager stack.
