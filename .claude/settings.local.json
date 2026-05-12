@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python3)",
+      "Bash(cat)",
+      "Bash(python3 /tmp/check_keys.py)",
+      "Bash(find c:\\\\\\\\Users\\\\\\\\longomichael\\\\\\\\Desktop\\\\\\\\tidalcase\\\\\\\\tidalcase\\\\\\\\backend -name \"*.py\" -type f)",
+      "Bash(xargs grep *)",
+      "Bash(xargs -0 grep -h \"'[a-zA-Z0-9._-]*' *| *translate\")",
+      "Bash(xargs -0 grep -h \"translate\\\\.instant\\('[a-zA-Z0-9._-]*'\")",
+      "Bash(xargs -0 grep -h \" translate>[a-zA-Z0-9._-]*<\")",
+      "Bash(xargs -0 grep -h \"translate\")",
+      "Bash(xargs -0 grep -oh \"'[a-zA-Z0-9._-]*' *| *translate\\\\|translate\\\\.instant\\('[a-zA-Z0-9._-]*'\\\\| translate>[a-zA-Z0-9._-]*<\")",
+      "Bash(docker exec *)"
+    ]
+  }
+}

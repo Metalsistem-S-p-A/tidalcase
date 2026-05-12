@@ -1,0 +1,89 @@
+services:
+  tidalcase-agent:
+    image: ghcr.io/mlongo-metalsistemspa/tidalcase-agent:latest
+    container_name: tidalcase-agent
+    restart: unless-stopped
+    user: "root"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - agent-data:/agent/data
+      - /etc/tidalcase/configs:/tmp/tidalcase_configs
+      - /etc/tidalcase/certs:/certs:ro
+      - vnc-nginx-instances:/nginx-instances
+    environment: &agent-env
+      FLASK_DEBUG: 0
+      TZ: "Europe/Rome"
+      TIDALCASE_JOIN_TOKEN: "your-join-token-here"
+      TIDALCASE_MANAGER_URL: "https://tidalcase.example.com"
+      TIDALCASE_AGENT_URL: "https://agent.example.com:7443"
+      TIDALCASE_CONFIG_HOST_DIR: "/etc/tidalcase/configs"
+      TIDALCASE_CERTS_HOST_DIR: "/etc/tidalcase/certs"
+      CELERY_BROKER_URL: "redis://tidalcase-agent-redis:6379/0"
+      CELERY_RESULT_BACKEND: "redis://tidalcase-agent-redis:6379/0"
+    networks:
+      - tidalcase-network
+
+  tidalcase-agent-nginx:
+    image: ghcr.io/mlongo-metalsistemspa/tidalcase-agent-nginx:latest
+    container_name: tidalcase-agent-nginx
+    restart: unless-stopped
+    environment:
+      <<: *agent-env
+    volumes:
+      - /etc/tidalcase/certs:/certs:ro
+      - vnc-nginx-instances:/etc/nginx/conf.d/instances:ro
+    ports:
+      - "0.0.0.0:7443:7443"
+    networks:
+      - tidalcase-network
+    depends_on:
+      - tidalcase-agent
+
+  tidalcase-agent-redis:
+    image: redis:8-alpine
+    restart: unless-stopped
+    environment:
+      <<: *agent-env
+    container_name: tidalcase-agent-redis
+    networks:
+      - tidalcase-network
+
+  tidalcase-agent-celery-worker:
+    image: ghcr.io/mlongo-metalsistemspa/tidalcase-agent:latest
+    container_name: tidalcase-agent-celery-worker
+    restart: unless-stopped
+    user: "root"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - agent-data:/agent/data
+    environment:
+      <<: *agent-env
+    command: celery -A app.celery_app worker --loglevel=info --concurrency=4 -Q celery,monitor
+    networks:
+      - tidalcase-network
+    depends_on:
+      - redis
+
+  tidalcase-agent-celery-beat:
+    image: ghcr.io/mlongo-metalsistemspa/tidalcase-agent:latest
+    container_name: tidalcase-agent-celery-beat
+    restart: unless-stopped
+    user: "root"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      <<: *agent-env
+    command: celery -A app.celery_app beat --loglevel=info
+    networks:
+      - tidalcase-network
+    depends_on:
+      - redis
+
+networks:
+  tidalcase-network:
+    name: tidalcase-network
+
+volumes:
+  agent-data:
+  vnc-nginx-instances:
+  redis:

@@ -1,0 +1,93 @@
+<p-toast></p-toast>
+<p-confirmDialog acceptIcon="pi pi-check" rejectIcon="pi pi-times"></p-confirmDialog>
+
+<div class="p-6">
+    <div class="flex items-center justify-between mb-6">
+        <h1 class="text-3xl font-semibold text-surface-900 dark:text-surface-0" translate>menu.adminStorage</h1>
+        <p-button icon="pi pi-plus" [label]="'admin.storage.new' | translate" (onClick)="openNew()"></p-button>
+    </div>
+
+    <p-card>
+        @if (loading()) {
+            <p-skeleton height="10rem" styleClass="w-full"></p-skeleton>
+        } @else {
+            <p-table [value]="providers()" styleClass="p-datatable-sm">
+                <ng-template #header>
+                    <tr>
+                        <th>{{ 'common.name' | translate }}</th>
+                        <th>{{ 'common.type' | translate }}</th>
+                        <th>{{ 'admin.storage.defaultDestination' | translate }}</th>
+                        <th>{{ 'common.status' | translate }}</th>
+                        <th class="w-24"></th>
+                    </tr>
+                </ng-template>
+                <ng-template #body let-p>
+                    <tr>
+                        <td class="font-medium">{{ p.display_name }}</td>
+                        <td class="text-sm text-surface-500">{{ typeLabel(p.provider_type) }}</td>
+                        <td class="font-mono text-sm text-surface-500">{{ p.default_destination }}</td>
+                        <td>
+                            @if (p.enabled) {
+                                <p-tag [value]="'admin.storage.active' | translate" severity="success"></p-tag>
+                            } @else {
+                                <p-tag [value]="'common.disabled' | translate" severity="secondary"></p-tag>
+                            }
+                        </td>
+                        <td>
+                            <div class="flex gap-1 justify-end">
+                                <p-button icon="pi pi-pencil" severity="secondary" [outlined]="true" size="small" (onClick)="openEdit(p)"></p-button>
+                                <p-button icon="pi pi-trash" severity="danger" [outlined]="true" size="small" (onClick)="confirmDelete(p)"></p-button>
+                            </div>
+                        </td>
+                    </tr>
+                </ng-template>
+                <ng-template #emptymessage>
+                    <tr><td colspan="5" class="text-center text-surface-500 py-8">{{ 'admin.storage.empty' | translate }}</td></tr>
+                </ng-template>
+            </p-table>
+        }
+    </p-card>
+</div>
+
+<p-dialog [visible]="showDialog()" (visibleChange)="showDialog.set($event)"
+    [header]="(isNew() ? 'admin.storage.newTitle' : 'admin.storage.editTitle') | translate"
+    [modal]="true" [style]="{width: '620px'}" [draggable]="false">
+
+    <div class="flex flex-col gap-4 py-2">
+        <div class="flex items-center gap-3">
+            <p-checkbox [(ngModel)]="editingProvider.enabled" [binary]="true" inputId="sp_enabled"></p-checkbox>
+            <label for="sp_enabled" class="text-sm font-medium">{{ 'admin.common.enabled' | translate }}</label>
+        </div>
+        <div>
+            <label class="block text-sm font-medium mb-1">{{ 'common.name' | translate }} *</label>
+            <input pInputText [(ngModel)]="editingProvider.display_name" class="w-full" placeholder="es. S3 aziendale" />
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+            <div>
+                <label class="block text-sm font-medium mb-1">{{ 'common.type' | translate }}</label>
+                <p-select [options]="providerTypes" [(ngModel)]="editingProvider.provider_type"
+                    optionLabel="label" optionValue="value" appendTo="body" styleClass="w-full"
+                    (onChange)="onTypeChange($event.value)"></p-select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium mb-1">{{ 'admin.storage.defaultDestination' | translate }} *</label>
+                <input pInputText [(ngModel)]="editingProvider.default_destination" class="w-full" placeholder="/storage" />
+            </div>
+        </div>
+
+        <div class="border-t border-surface-200 dark:border-surface-700 pt-3">
+            <label class="block text-sm font-medium mb-1">
+                {{ 'admin.storage.volumeConfig' | translate }}
+                <i class="pi pi-question-circle ml-1 text-surface-400"
+                   pTooltip='{"driver":"rclone","driver_opts":{...}}'></i>
+            </label>
+            <textarea pTextarea [(ngModel)]="editingProvider._volumeConfigStr"
+                rows="10" class="w-full font-mono text-sm" spellcheck="false"></textarea>
+        </div>
+    </div>
+
+    <ng-template #footer>
+        <p-button [label]="'common.cancel' | translate" icon="pi pi-times" severity="secondary" (onClick)="showDialog.set(false)"></p-button>
+        <p-button [label]="'common.save' | translate" icon="pi pi-check" [loading]="saving()" (onClick)="save()"></p-button>
+    </ng-template>
+</p-dialog>

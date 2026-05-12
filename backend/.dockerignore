@@ -1,0 +1,12 @@
+__pycache__/
+*.py[cod]
+*.pyc
+.env
+data/
+instance/
+celerybeat-schedule
+celerybeat.pid
+credentials.txt
+nginx/
+.venv/
+venv/

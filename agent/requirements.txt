@@ -1,0 +1,8 @@
+flask==3.1.1
+docker==7.1.0
+gunicorn==23.0.0
+psutil==6.1.1
+requests==2.32.3
+celery==5.6.3
+redis==7.4.0
+debugpy==1.8.20

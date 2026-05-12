@@ -1,0 +1,7 @@
+<div class="flex flex-col gap-4">
+    <div class="flex flex-col gap-2">
+        <span class="text-sm text-muted-color font-semibold">{{ 'language' | translate }}</span>
+        <p-selectbutton [options]="languages" [ngModel]="selectedLanguage()" (ngModelChange)="changeLanguage($event)"
+            [allowEmpty]="false" size="small" />
+    </div>
+</div>

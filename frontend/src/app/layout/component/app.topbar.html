@@ -1,0 +1,51 @@
+<div class="layout-topbar">
+    <div class="layout-topbar-logo-container">
+        @if (isAuthenticated) {
+        <button class="layout-menu-button layout-topbar-action" (click)="layoutService.onMenuToggle()">
+            <i class="pi pi-bars"></i>
+        </button>
+        }
+    </div>
+
+    <div class="layout-topbar-actions">
+        <div class="layout-config-menu">
+            <div class="relative">
+                <button class="layout-topbar-action" pStyleClass="@next" enterFromClass="hidden"
+                    enterActiveClass="animate-scalein" leaveToClass="hidden" leaveActiveClass="animate-fadeout"
+                    [hideOnOutsideClick]="true">
+                    <i class="pi pi-language"></i>
+                </button>
+                <app-language-selector />
+            </div>
+            <div class="relative">
+                <button class="layout-topbar-action" pStyleClass="@next" enterFromClass="hidden"
+                    enterActiveClass="animate-scalein" leaveToClass="hidden" leaveActiveClass="animate-fadeout"
+                    [hideOnOutsideClick]="true">
+                    <i class="pi pi-palette"></i>
+                </button>
+                <app-configurator />
+            </div>
+        </div>
+
+        @if (isAuthenticated) {
+        <button class="layout-topbar-menu-button layout-topbar-action" pStyleClass="@next" enterFromClass="hidden"
+            enterActiveClass="animate-scalein" leaveToClass="hidden" leaveActiveClass="animate-fadeout"
+            [hideOnOutsideClick]="true">
+            <i class="pi pi-ellipsis-v"></i>
+        </button>
+
+        <div class="layout-topbar-menu hidden lg:block">
+            <div class="layout-topbar-menu-content">
+                <button type="button" class="layout-topbar-action" (click)="goToProfile()">
+                    <i class="pi pi-user"></i>
+                    <span>{{ 'profile.title' | translate }}</span>
+                </button>
+                <button type="button" class="layout-topbar-action" (click)="logout()">
+                    <i class="pi pi-sign-out"></i>
+                    <span>{{ 'auth.logout' | translate }}</span>
+                </button>
+            </div>
+        </div>
+        }
+    </div>
+</div>

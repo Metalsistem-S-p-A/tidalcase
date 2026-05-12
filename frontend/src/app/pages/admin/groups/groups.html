@@ -1,0 +1,157 @@
+<div class="card">
+    <h2 class="mb-4">{{ 'groups.title' | translate }}</h2>
+    <p class="text-surface-600 dark:text-surface-400 mb-6">{{ 'groups.description' | translate }}</p>
+
+    <div class="mb-5">
+        <p-button [label]="'groups.create' | translate" icon="pi pi-plus" (onClick)="showCreateDialog()"
+            severity="primary">
+        </p-button>
+    </div>
+
+    <p-table [value]="groups()" [loading]="loading()" styleClass="p-datatable-striped">
+        <ng-template #header>
+            <tr>
+                <th [style]="{ 'min-width': '180px' }">{{ 'groups.nameLabel' | translate }}</th>
+                <th>{{ 'permissions' | translate }}</th>
+                <th [style]="{ 'min-width': '150px' }">{{ 'common.actions' | translate }}</th>
+            </tr>
+        </ng-template>
+
+        <ng-template #body let-group>
+            <tr>
+                <td>
+                    <div class="flex items-center gap-2">
+                        <span class="font-medium">{{ group.display_name }}</span>
+                        @if (group.protected) {
+                        <i class="pi pi-lock text-surface-400" [pTooltip]="'users.protected' | translate"></i>
+                        }
+                        @if (group.permissions.admin_panel) {
+                        <p-tag value="Admin" severity="warn"></p-tag>
+                        }
+                    </div>
+                </td>
+                <td>
+                    <span class="text-surface-500 text-sm">{{ getSummary(group) }}</span>
+                </td>
+                <td>
+                    <div class="flex gap-2">
+                        <p-button icon="pi pi-pencil" [rounded]="true" [text]="true" severity="info"
+                            (onClick)="showEditDialog(group)">
+                        </p-button>
+                        <p-button icon="pi pi-trash" [rounded]="true" [text]="true" severity="danger"
+                            [disabled]="group.protected" (onClick)="deleteGroup(group)"
+                            [pTooltip]="group.protected ? ('groups.protectedCannotDelete' | translate) : ''">
+                        </p-button>
+                    </div>
+                </td>
+            </tr>
+        </ng-template>
+
+        <ng-template #emptymessage>
+            <tr>
+                <td colspan="3" class="text-center">{{ 'groups.noGroups' | translate }}</td>
+            </tr>
+        </ng-template>
+    </p-table>
+</div>
+
+<p-dialog [visible]="displayDialog()" (visibleChange)="displayDialog.set($event)"
+    [header]="(isNewGroup() ? 'groups.create' : 'groups.edit') | translate"
+    [modal]="true" [style]="{width: '560px'}" [closable]="true">
+
+    <form [formGroup]="form" class="flex flex-col gap-5 pt-2">
+
+        <div class="flex flex-col gap-2">
+            <label for="display_name" class="font-medium">{{ 'groups.nameLabel' | translate }} *</label>
+            <input pInputText id="display_name" formControlName="display_name" class="w-full"
+                [placeholder]="'groups.namePlaceholder' | translate" />
+        </div>
+
+        <div class="border-t border-surface-200 dark:border-surface-700 pt-4">
+            <h4 class="font-semibold mb-4">{{ 'permissions' | translate }}</h4>
+
+            <div class="flex items-center gap-3 mb-4 pb-3 border-b border-surface-100 dark:border-surface-800">
+                <p-checkbox formControlName="perm_admin_panel" [binary]="true" inputId="perm_admin_panel" />
+                <label for="perm_admin_panel" class="font-medium">
+                    {{ 'groups.permissions.adminPanel' | translate }}
+                </label>
+            </div>
+
+            <table class="w-full">
+                <thead>
+                    <tr class="border-b border-surface-200 dark:border-surface-700">
+                        <th class="text-left py-2 pr-4 font-medium" style="width: 50%">{{ 'groups.resource' | translate }}</th>
+                        <th class="text-center py-2 font-medium" style="width: 25%">{{ 'groups.view' | translate }}</th>
+                        <th class="text-center py-2 font-medium" style="width: 25%">{{ 'groups.edit' | translate }}</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @for (row of permissionRows; track row.editKey) {
+                    <tr class="border-b border-surface-100 dark:border-surface-800">
+                        <td class="py-3 pr-4">{{ row.label | translate }}</td>
+                        <td class="py-3 text-center">
+                            @if (row.viewKey) {
+                            <p-checkbox [formControlName]="row.viewKey" [binary]="true"
+                                [inputId]="row.viewKey" />
+                            }
+                        </td>
+                        <td class="py-3 text-center">
+                            <p-checkbox [formControlName]="row.editKey" [binary]="true"
+                                [inputId]="row.editKey" />
+                        </td>
+                    </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+
+        <div class="border-t border-surface-200 dark:border-surface-700 pt-4">
+            <h4 class="font-semibold mb-4" translate>groups.settings</h4>
+            <div class="grid grid-cols-2 gap-4">
+                <div class="flex flex-col gap-2">
+                    <label for="priority" class="text-sm font-medium" translate>groups.priority</label>
+                    <p-inputnumber id="priority" formControlName="priority" [min]="0" [showButtons]="true"
+                        styleClass="w-full" [pTooltip]="'groups.priorityTooltip' | translate"></p-inputnumber>
+                </div>
+                <div class="flex flex-col gap-2">
+                    <label for="max_sessions_per_user" class="text-sm font-medium" translate>groups.maxSessionPerUser</label>
+                    <p-inputnumber id="max_sessions_per_user" formControlName="max_sessions_per_user"
+                        [min]="0" [showButtons]="true" styleClass="w-full"
+                        [pTooltip]="'groups.maxSessionPerUserTooltip' | translate"></p-inputnumber>
+                </div>
+                <div class="flex flex-col gap-2">
+                    <label for="allow_audio" class="text-sm font-medium" translate>groups.allowAudio</label>
+                    <p-selectbutton [options]="stateOptions" id="allow_audio" formControlName="allow_audio" styleClass="w-full"></p-selectbutton>
+                </div>
+                <div class="flex flex-col gap-2">
+                    <label for="allow_uploads" class="text-sm font-medium" translate>groups.allowUploads</label>
+                    <p-selectbutton [options]="stateOptions" id="allow_uploads" formControlName="allow_uploads" styleClass="w-full"></p-selectbutton>
+                </div>
+                <div class="flex flex-col gap-2">
+                    <label for="allow_downloads" class="text-sm font-medium" translate>groups.allowDownloads</label>
+                    <p-selectbutton [options]="stateOptions" id="allow_downloads" formControlName="allow_downloads" styleClass="w-full"></p-selectbutton>
+                </div>
+                <div class="flex flex-col gap-2 col-span-2">
+                    <label for="auto_start_tide_id" class="text-sm font-medium" translate>groups.autoStartTide</label>
+                    <p-select id="auto_start_tide_id" formControlName="auto_start_tide_id"
+                        [options]="availableTides()" optionLabel="label" optionValue="value"
+                        [showClear]="true" [placeholder]="'groups.autoStartTideNone' | translate"
+                        styleClass="w-full" appendTo="body">
+                    </p-select>
+                </div>
+            </div>
+        </div>
+
+    </form>
+
+    <ng-template #footer>
+        <p-button [label]="'common.cancel' | translate" icon="pi pi-times" [text]="true"
+            (onClick)="hideDialog()">
+        </p-button>
+        <p-button [label]="'common.save' | translate" icon="pi pi-check" (onClick)="saveGroup()"
+            [loading]="saving()">
+        </p-button>
+    </ng-template>
+</p-dialog>
+
+<p-confirmDialog acceptIcon="pi pi-check" rejectIcon="pi pi-times"></p-confirmDialog>

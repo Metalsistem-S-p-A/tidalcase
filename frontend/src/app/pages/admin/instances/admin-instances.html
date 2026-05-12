@@ -1,0 +1,44 @@
+<p-toast></p-toast>
+<p-confirmDialog acceptIcon="pi pi-check" rejectIcon="pi pi-times"></p-confirmDialog>
+
+<div class="p-6">
+    <div class="flex items-center justify-between mb-6">
+        <h1 class="text-3xl font-semibold text-surface-900 dark:text-surface-0" translate>menu.adminInstances</h1>
+        <p-button icon="pi pi-refresh" [label]="'admin.instances.refresh' | translate" severity="secondary" [outlined]="true" (onClick)="load()"></p-button>
+    </div>
+
+    <p-card>
+        @if (loading()) {
+            <p-skeleton height="10rem" styleClass="w-full"></p-skeleton>
+        } @else {
+            <p-table [value]="instances()" [tableStyle]="{'min-width': '50rem'}" styleClass="p-datatable-sm">
+                <ng-template #header>
+                    <tr>
+                        <th>Tide</th>
+                        <th>{{ 'admin.instances.agent' | translate }}</th>
+                        <th>{{ 'admin.instances.user' | translate }}</th>
+                        <th>{{ 'admin.instances.startedAt' | translate }}</th>
+                        <th class="w-24"></th>
+                    </tr>
+                </ng-template>
+                <ng-template #body let-i>
+                    <tr>
+                        <td>
+                            <div class="font-medium">{{ i.tide?.display_name }}</div>
+                            <div class="text-xs text-surface-400">{{ i.tide?.container_docker_image }}</div>
+                        </td>
+                        <td>{{ i.agent?.name }}</td>
+                        <td>{{ i.user?.username }}</td>
+                        <td class="text-sm text-surface-500">{{ i.created_at | date:'dd/MM/yyyy HH:mm' }}</td>
+                        <td>
+                            <p-button icon="pi pi-stop" severity="danger" [outlined]="true" size="small" [pTooltip]="'admin.instances.terminate' | translate" [loading]="deletingId === i.id" (onClick)="confirmDelete(i)"></p-button>
+                        </td>
+                    </tr>
+                </ng-template>
+                <ng-template #emptymessage>
+                    <tr><td colspan="4" class="text-center text-surface-500 py-8">{{ 'admin.instances.empty' | translate }}</td></tr>
+                </ng-template>
+            </p-table>
+        }
+    </p-card>
+</div>

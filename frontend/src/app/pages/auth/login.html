@@ -1,0 +1,126 @@
+<app-topbar></app-topbar>
+<div
+    class="bg-surface-50 dark:bg-surface-950 flex items-center justify-center min-h-screen min-w-screen overflow-hidden">
+    <div class="flex flex-col items-center justify-center">
+        <div
+            style="border-radius: 56px; padding: 0.3rem; background: linear-gradient(180deg, var(--primary-color) 10%, rgba(33, 150, 243, 0) 30%)">
+            <div class="w-full bg-surface-0 dark:bg-surface-900 py-20 px-8 sm:px-20" style="border-radius: 53px">
+                <div class="flex flex-col items-center w-full mb-3" style="min-width: 500px">
+                    <img src="favicon.png" style="max-height: 100px;" />
+                </div>
+                <div class="text-center mb-8">
+                    <div class="text-surface-900 dark:text-surface-0 text-3xl font-medium mb-4" translate>welcome
+                    </div>
+                </div>
+
+                @if (directProviders().length > 0) {
+                <div>
+                    <label for="username1" class="block text-surface-900 dark:text-surface-0 text-xl font-medium"
+                        translate>auth.username</label>
+                    <input pInputText id="username1" type="text" [placeholder]="'auth.username' | translate"
+                        class="w-full mb-2" [(ngModel)]="username" />
+
+                    <label for="password1" class="block text-surface-900 dark:text-surface-0 font-medium text-xl"
+                        translate>auth.password</label>
+                    <p-password id="password1" [(ngModel)]="password" [placeholder]="'auth.password' | translate"
+                        [toggleMask]="true" styleClass="mb-2" [fluid]="true" [feedback]="false"
+                        (keyup.enter)="onLogin()" class="w-full mb-2"></p-password>
+
+                    @if (sessionExpiredMessage) {
+                    <div class="text-orange-500 text-sm mb-4 p-3 bg-orange-50 dark:bg-orange-900/20 rounded">
+                        <i class="pi pi-exclamation-triangle mr-2"></i>{{ 'auth.sessionExpired' | translate }}
+                    </div>
+                    }
+
+                    @if (errorMessage) {
+                    <div class="text-red-500 text-sm mb-4">{{ 'auth.loginFailed' | translate }}</div>
+                    }
+
+                    <div class="flex items-center justify-between mb-2">
+                        <div class="flex items-center gap-2">
+                            <p-checkbox [(ngModel)]="checked" [binary]="true" inputId="rememberMe"></p-checkbox>
+                            <label for="rememberMe" class="cursor-pointer text-surface-700 dark:text-surface-200 text-sm" translate>
+                                auth.rememberMe
+                            </label>
+                        </div>
+                        <a routerLink="/auth/forgot-password" class="text-primary-600 hover:underline text-sm" translate>
+                            auth.forgotPassword
+                        </a>
+                    </div>
+
+                    <p-button [label]="'auth.login' | translate" icon="pi pi-sign-in" styleClass="w-full mt-2" (onClick)="onLogin()"
+                        [loading]="isLoading"></p-button>
+                </div>
+                }
+
+                @if (externalProviders().length > 0) {
+                <div class="mt-6">
+                    @if (directProviders().length > 0) {
+                    <div class="text-center mb-4 text-muted-color">
+                        <span translate>auth.orSignInWith</span>
+                    </div>
+                    }
+                    <div class="flex flex-col gap-2">
+                        @for (provider of externalProviders(); track provider._id) {
+
+                        <p-button styleClass="w-full" severity="secondary" [outlined]="true"
+                            (onClick)="onExternalProviderLogin(provider)" [disabled]="isLoading">
+                            <span class="inline-flex items-center gap-2">
+                                @if (provider.type === 'local') {
+                                <i class="pi pi-user"></i>
+                                } @else if (provider.type === 'ldap') {
+                                <i class="pi pi-shield"></i>
+                                } @else if (provider.type === 'azure-ad') {
+                                <i class="pi pi-microsoft"></i>
+                                } @else if (provider.type === 'oidc') {
+                                <i class="pi pi-id-card"></i>
+                                } @else {
+                                <i class="pi pi-external-link"></i>
+                                }
+                                {{ provider.name }}
+                            </span>
+                        </p-button>
+                        }
+                    </div>
+                </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- MFA Verification Dialog -->
+<p-dialog [(visible)]="showMfaDialog" [header]="'mfa.title' | translate" [modal]="true" [closable]="false"
+    [closeOnEscape]="false" [style]="{ width: '450px' }">
+    <div class="flex flex-col gap-5 p-2">
+        <p class="text-surface-700 dark:text-surface-200">{{ 'mfa.loginInstructions' | translate:{ username:
+            mfaUsername } }}</p>
+
+        <div class="flex flex-col gap-2">
+            <label for="mfaLoginToken" class="block font-medium text-surface-700 dark:text-surface-200">{{
+                'mfa.verificationCode' | translate }} *</label>
+            <input pInputText id="mfaLoginToken" [(ngModel)]="mfaToken" [placeholder]="'mfa.enterCode' | translate"
+                maxlength="6" class="w-full" (keyup.enter)="verifyMfa()" autofocus />
+        </div>
+
+        <div class="flex items-center gap-2">
+            <p-checkbox [(ngModel)]="trustDevice" [binary]="true" inputId="trustDevice"></p-checkbox>
+            <label for="trustDevice" class="cursor-pointer text-surface-700 dark:text-surface-200">
+                {{ 'mfa.rememberDevice' | translate }}
+            </label>
+        </div>
+
+        @if (errorMessage) {
+        <div class="text-red-500 dark:text-red-400 text-sm">{{ errorMessage }}</div>
+        }
+    </div>
+
+    <ng-template #footer>
+        <p-button [label]="'common.cancel' | translate" icon="pi pi-times" (onClick)="cancelMfa()" severity="secondary"
+            [disabled]="isLoading">
+        </p-button>
+        <p-button [label]="'mfa.verify' | translate" icon="pi pi-check" (onClick)="verifyMfa()" [loading]="isLoading"
+            [disabled]="!mfaToken || mfaToken.length !== 6">
+        </p-button>
+    </ng-template>
+</p-dialog>

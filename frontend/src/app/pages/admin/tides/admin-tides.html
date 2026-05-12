@@ -1,0 +1,244 @@
+<p-toast></p-toast>
+<p-confirmDialog acceptIcon="pi pi-check" rejectIcon="pi pi-times"></p-confirmDialog>
+
+<div class="p-6">
+    <div class="flex items-center justify-between mb-6">
+        <h1 class="text-3xl font-semibold text-surface-900 dark:text-surface-0" translate>menu.adminTides</h1>
+        <p-button icon="pi pi-plus" [label]="'admin.tides.new' | translate" (onClick)="openNew()"></p-button>
+    </div>
+
+    <p-card>
+        @if (loading()) {
+            <p-skeleton height="12rem" styleClass="w-full"></p-skeleton>
+        } @else {
+            <p-table [value]="tides()" [tableStyle]="{'min-width': '50rem'}" styleClass="p-datatable-sm">
+                <ng-template #header>
+                    <tr>
+                        <th>{{ 'common.name' | translate }}</th>
+                        <th>{{ 'common.type' | translate }}</th>
+                        <th>{{ 'admin.tides.dockerImage' | translate }}</th>
+                        <th>CPU / RAM</th>
+                        <th class="w-28"></th>
+                    </tr>
+                </ng-template>
+                <ng-template #body let-d>
+                    <tr>
+                        <td>
+                            <div class="font-medium">{{ d.display_name }}</div>
+                            @if (d.description) {
+                                <div class="text-xs text-surface-400">{{ d.description }}</div>
+                            }
+                        </td>
+                        <td><p-tag [value]="d.tide_type" [severity]="getTypeSeverity(d.tide_type)"></p-tag></td>
+                        <td class="font-mono text-sm text-surface-500">{{ d.container_docker_image || d.server_ip || '—' }}</td>
+                        <td class="text-sm text-surface-500">
+                            @if (d.tide_type === 'container') {
+                                {{ d.container_cores }} {{ 'admin.tides.cpu' | translate }} / {{ d.container_memory }} {{ 'admin.tides.ram' | translate }}
+                            } @else { — }
+                        </td>
+                        <td>
+                            <div class="flex gap-1 justify-end">
+                                <p-button icon="pi pi-pencil" severity="secondary" [outlined]="true" size="small" [pTooltip]="'common.edit' | translate" (onClick)="openEdit(d)"></p-button>
+                                <p-button icon="pi pi-trash" severity="danger" [outlined]="true" size="small" [pTooltip]="'common.delete' | translate" (onClick)="confirmDelete(d)"></p-button>
+                            </div>
+                        </td>
+                    </tr>
+                </ng-template>
+                <ng-template #emptymessage>
+                    <tr><td colspan="5" class="text-center text-surface-500 py-8">{{ 'admin.tides.empty' | translate }}</td></tr>
+                </ng-template>
+            </p-table>
+        }
+    </p-card>
+</div>
+
+<!-- Edit/New dialog -->
+<p-dialog [visible]="showDialog()" (visibleChange)="showDialog.set($event)" [header]="(isNew() ? 'admin.tides.new' : 'admin.tides.editTitle') | translate" [modal]="true" style="width: '80vw'; min-width: '640px'" [draggable]="false">
+    <div class="flex flex-col gap-4 py-2">
+        <div class="grid grid-cols-3 gap-4">
+
+            <!-- Immagine -->
+            <div class="col-span-3">
+                <label class="block text-sm font-medium mb-2">{{ 'admin.tides.image' | translate }}</label>
+                <div class="flex gap-3 items-start">
+                    <div class="w-20 h-20 rounded-lg border border-surface-200 dark:border-surface-700 overflow-hidden bg-surface-100 dark:bg-surface-800 flex-shrink-0 flex items-center justify-center">
+                        @if (editingTide.image_path) {
+                            <img [src]="editingTide.image_path" alt="preview" class="h-full object-cover" />
+                        } @else {
+                            <i class="pi pi-image text-2xl text-surface-400"></i>
+                        }
+                    </div>
+                    <div class="flex-1 flex flex-col gap-2">
+                        <input pInputText [(ngModel)]="editingTide.image_path" class="w-full" [placeholder]="'admin.tides.imageUrlPlaceholder' | translate" />
+                        <div class="flex gap-2">
+                            <p-button [label]="'admin.tides.uploadFile' | translate" icon="pi pi-upload" size="small" severity="secondary" [outlined]="true" [loading]="uploading()" (onClick)="triggerFileInput(fileInput)"></p-button>
+                            @if (editingTide.image_path) {
+                                <p-button icon="pi pi-times" size="small" severity="danger" [outlined]="true" [pTooltip]="'admin.registry.remove' | translate" (onClick)="editingTide.image_path = undefined"></p-button>
+                            }
+                        </div>
+                    </div>
+                </div>
+                <input #fileInput type="file" accept="image/png,image/jpeg,image/gif,image/webp,image/svg+xml" class="hidden" (change)="onFileSelected($event)" />
+            </div>
+
+            <div class="col-span-3">
+                <label class="block text-sm font-medium mb-1">{{ 'common.name' | translate }} *</label>
+                <input pInputText [(ngModel)]="editingTide.display_name" class="w-full" placeholder="es. Ubuntu Desktop" />
+            </div>
+            <div class="col-span-3">
+                <label class="block text-sm font-medium mb-1">{{ 'common.description' | translate }}</label>
+                <textarea pTextarea [(ngModel)]="editingTide.description" rows="2" class="w-full"></textarea>
+            </div>
+            <div class="col-span-3">
+                <label class="block text-sm font-medium mb-1">{{ 'common.type' | translate }} *</label>
+                <p-select [options]="tideTypes" [(ngModel)]="editingTide.tide_type" optionLabel="label" optionValue="value" styleClass="w-full" appendTo="body"></p-select>
+            </div>
+            <div class="col-span-3">
+                <label class="block text-sm font-medium mb-1">{{ 'admin.tides.restrictedGroups' | translate }}</label>
+                <p-multiselect [options]="availableGroups()" [(ngModel)]="restrictedGroupIds"
+                    optionLabel="display_name" optionValue="id"
+                    [placeholder]="'admin.tides.restrictedGroupsPlaceholder' | translate"
+                    appendTo="body" styleClass="w-full"></p-multiselect>
+                <small class="text-surface-400 text-xs">{{ 'admin.tides.restrictedGroupsHelp' | translate }}</small>
+            </div>
+
+            <div class="col-span-3">
+                <label class="block text-sm font-medium mb-1">{{ 'admin.tides.dockerImage' | translate }} *</label>
+                <input pInputText [(ngModel)]="editingTide.container_docker_image" class="w-full" placeholder="es. kasmweb/ubuntu-noble-desktop:1.18.0" />
+            </div>
+            <div class="col-span-3">
+                <label class="block text-sm font-medium mb-1">{{ 'admin.tides.dockerRegistry' | translate }}</label>
+                <input pInputText [(ngModel)]="editingTide.container_docker_registry" class="w-full" placeholder="es. registry.tidalcase.org" />
+            </div>
+            @if (editingTide.tide_type === 'container') {
+                <div>
+                    <label class="block text-sm font-medium mb-1">{{ 'admin.tides.cpu' | translate }} *</label>
+                    <p-inputNumber [(ngModel)]="editingTide.container_cores" [min]="0.5" [step]="0.5" styleClass="w-full"></p-inputNumber>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">{{ 'admin.tides.ram' | translate }} *</label>
+                    <input pInputText [(ngModel)]="editingTide.container_memory" class="w-full" placeholder="2g, 512m" />
+                </div>
+                <div class="col-span">
+                    <label class="block text-sm font-medium mb-1">{{ 'admin.tides.swap' | translate }} *</label>
+                    <input pInputText [(ngModel)]="editingTide.container_swap" class="w-full" placeholder="1g, 512m" />
+                    <small class="text-surface-400 text-xs">{{ 'admin.tides.swapHelp' | translate }}</small>
+                </div>
+                <div class="col-span-3">
+                    <label class="block text-sm font-medium mb-1">{{ 'admin.tides.vncUser' | translate }}</label>
+                    <input pInputText [(ngModel)]="editingTide.vnc_user" class="w-full" placeholder="kasm_user" />
+                </div>
+                <div class="col-span-3">
+                    <label class="block text-sm font-medium mb-1">{{ 'admin.tides.uploadPath' | translate }}</label>
+                    <input pInputText [(ngModel)]="editingTide.upload_path" class="w-full" placeholder="/home/kasm-user/Uploads" />
+                </div>
+                <div class="col-span-3">
+                    <label class="block text-sm font-medium mb-1">{{ 'admin.tides.downloadPath' | translate }}</label>
+                    <input pInputText [(ngModel)]="editingTide.download_path" class="w-full" placeholder="/home/kasm-user/Downloads" />
+                </div>
+            } @else {
+                <div>
+                    <label class="block text-sm font-medium mb-1">{{ 'admin.tides.serverIp' | translate }} *</label>
+                    <input pInputText [(ngModel)]="editingTide.server_ip" class="w-full" />
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1">{{ 'admin.tides.serverPort' | translate }}</label>
+                    <input pInputText [(ngModel)]="editingTide.server_port" class="w-full" />
+                </div>
+                <div class="col-span-3">
+                    <label class="block text-sm font-medium mb-1">{{ 'admin.tides.connectionSettings' | translate }}</label>
+                    <app-json-editor [value]="connectionSettingsJson" (valueChange)="connectionSettingsJson = $event"></app-json-editor>
+                    <small class="text-surface-400 text-xs">{{ 'admin.tides.connectionSettingsHelp' | translate }}</small>
+                </div>
+            }
+            <div>
+                <label class="block text-sm font-medium mb-1">{{ 'admin.tides.sessionLimit' | translate }}</label>
+                <p-inputNumber [(ngModel)]="editingTide.session_time_limit" [min]="0" styleClass="w-full"></p-inputNumber>
+            </div>
+            <div>
+                <label class="block text-sm font-medium mb-1">{{ 'admin.tides.idleLimit' | translate }}</label>
+                <p-inputNumber [(ngModel)]="editingTide.session_idle_time_limit" [min]="0" styleClass="w-full"></p-inputNumber>
+            </div>
+            <div>
+                <label class="block text-sm font-medium mb-1">{{ 'admin.tides.agentSelection' | translate }}</label>
+                <p-select [options]="agentSelectionMode" [(ngModel)]="editingTide.agent_selection_mode" optionLabel="label" optionValue="value" styleClass="w-full" appendTo="body"></p-select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium mb-1">{{ 'admin.tides.openMode' | translate }}</label>
+                <p-select [options]="openMode" [(ngModel)]="editingTide.open_mode" optionLabel="label" optionValue="value" styleClass="w-full" appendTo="body"></p-select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium mb-1">
+                    {{ 'admin.tides.agentLimit' | translate }}
+                    @if (editingTide.agent_selection_mode === 'fixed') {
+                        <span class="text-red-500 ml-0.5">*</span>
+                    }
+                </label>
+                @if (editingTide.agent_selection_mode === 'fixed') {
+                    <p-select
+                        [options]="availableAgents()"
+                        [(ngModel)]="selectedAgentId"
+                        optionLabel="display_name"
+                        optionValue="id"
+                        [placeholder]="'admin.tides.agentLimitPlaceholder' | translate"
+                        styleClass="w-full"
+                        appendTo="body">
+                    </p-select>
+                } @else {
+                    <p-multiselect
+                        [options]="availableAgents()"
+                        [(ngModel)]="selectedAgentIds"
+                        optionLabel="display_name"
+                        optionValue="id"
+                        [placeholder]="'admin.tides.agentLimitPlaceholder' | translate"
+                        styleClass="w-full"
+                        appendTo="body">
+                    </p-multiselect>
+                }
+            </div>
+        </div>
+
+        <!-- Storage mounts -->
+        @if (availableProviders().length > 0) {
+            <div class="border-t border-surface-200 dark:border-surface-700 pt-4 mt-2">
+                <div class="flex items-center justify-between mb-3">
+                    <span class="text-sm font-medium">{{ 'admin.tides.storageTitle' | translate }}</span>
+                    <p-button [label]="'admin.tides.addMount' | translate" icon="pi pi-plus" size="small" severity="secondary" [outlined]="true" (onClick)="addMount()"></p-button>
+                </div>
+                @if (storageMounts().length === 0) {
+                    <p class="text-sm text-surface-400">{{ 'admin.tides.noMounts' | translate }}</p>
+                } @else {
+                    <div class="flex flex-col gap-2">
+                        @for (mount of storageMounts(); track $index) {
+                            <div class="flex items-center gap-2 p-2 rounded-lg border border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800">
+                                <p-select [options]="availableProviders()" [ngModel]="mount.storage_provider_id"
+                                    (ngModelChange)="onMountProviderChange($index, $event)"
+                                    optionLabel="display_name" optionValue="id"
+                                    appendTo="body" styleClass="flex-1 min-w-0"
+                                    appendTo="body"></p-select>
+                                <input pInputText [ngModel]="mount.destination"
+                                    (ngModelChange)="updateMount($index, {destination: $event})"
+                                    class="w-36 font-mono text-sm" placeholder="/storage" />
+                                <div class="flex items-center gap-1" pTooltip="Abilitato">
+                                    <p-checkbox [ngModel]="mount.enabled" [binary]="true"
+                                        (ngModelChange)="updateMount($index, {enabled: $event})"></p-checkbox>
+                                </div>
+                                <div class="flex items-center gap-1" pTooltip="Sola lettura">
+                                    <p-checkbox [ngModel]="mount.read_only" [binary]="true"
+                                        (ngModelChange)="updateMount($index, {read_only: $event})"></p-checkbox>
+                                    <span class="text-xs text-surface-400">RO</span>
+                                </div>
+                                <p-button icon="pi pi-trash" severity="danger" [outlined]="true" size="small" (onClick)="removeMount($index)"></p-button>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        }
+    </div>
+
+    <ng-template #footer>
+        <p-button [label]="'common.cancel' | translate" icon="pi pi-times" severity="secondary" (onClick)="showDialog.set(false)"></p-button>
+        <p-button [label]="'common.save' | translate" icon="pi pi-check" [loading]="saving()" (onClick)="save()"></p-button>
+    </ng-template>
+</p-dialog>

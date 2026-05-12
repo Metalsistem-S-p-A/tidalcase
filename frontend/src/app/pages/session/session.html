@@ -1,0 +1,410 @@
+<!-- Tab on left edge — auto-hides, reappears on left-edge hover -->
+<div class="fixed top-[30%] -translate-y-1/2 rounded-tr-[5px] rounded-br-[5px] z-[1001]
+            flex flex-col items-center gap-2 py-3.5 px-1.5
+            bg-white shadow-[2px_0_12px_rgba(0,0,0,0.15)] cursor-pointer select-none
+            transition-[left,opacity] duration-[250ms] ease-in-out hover:bg-neutral-100"
+     [style.left]="panelVisible() ? '300px' : '0'"
+     [class.opacity-0]="!tabVisible() && !panelVisible()"
+     (mouseenter)="onTabEnter()" (mouseleave)="onTabLeave()"
+     (click)="togglePanel()" role="button" [attr.aria-expanded]="panelVisible()" aria-label="Pannello di controllo">
+    <i class="pi pi-th-large text-[15px] text-[#555]"></i>
+    <span class="[writing-mode:vertical-rl] [text-orientation:mixed] rotate-180 text-[11px] font-semibold text-[#555] tracking-[0.5px] whitespace-nowrap">
+        {{ 'session.controlPanel' | translate }}
+    </span>
+</div>
+
+@if (panelVisible()) {
+<div class="fixed inset-0 z-[999]" (click)="togglePanel()"></div>
+}
+
+<!-- Sliding control panel -->
+<div class="fixed top-0 h-screen w-[300px] z-[1000] flex flex-col overflow-hidden bg-gray-100 shadow-[-4px_0_24px_rgba(0,0,0,0.18)] transition-[left] duration-[250ms] ease-in-out"
+     [style.left]="panelVisible() ? '0' : '-320px'"
+     role="dialog" [attr.aria-hidden]="!panelVisible()">
+
+    <!-- Header -->
+    <div class="flex items-center justify-between px-4 pt-[18px] pb-3.5 bg-white border-b border-gray-200">
+        <h3 class="m-0 text-[15px] font-bold text-gray-900">{{ 'session.controlPanel' | translate }}</h3>
+        <button class="size-7 border-0 bg-gray-100 hover:bg-gray-200 cursor-pointer flex items-center justify-center text-gray-500 text-[13px] p-0 transition-colors rounded"
+                (click)="togglePanel()" [attr.aria-label]="'common.close' | translate">
+            <i class="pi pi-times"></i>
+        </button>
+    </div>
+
+    <!-- Icon toggle bar -->
+    <div class="flex items-center justify-start gap-3 px-3 py-3 bg-white border-b border-gray-200">
+        <!-- Sound -->
+        @if (canAudio() && kasmAudioAvailable() && !isGuacSession()) {
+        <div class="flex flex-col items-center gap-1 cursor-pointer select-none"
+             [class.opacity-40]="!connected()"
+             [class.pointer-events-none]="!connected()"
+             (click)="toggleAudio()"
+             role="button" [attr.tabindex]="connected() ? 0 : -1"
+             [attr.aria-label]="(audioActive() ? 'session.audioMute' : 'session.audioEnable') | translate">
+            <div class="size-12 rounded-xl flex items-center justify-center transition-colors"
+                 [class]="audioActive() ? 'bg-green-500' : 'bg-gray-100'">
+                <i class="pi pi-volume-up text-xl transition-colors"
+                   [class.text-white]="audioActive()"
+                   [class.text-gray-500]="!audioActive()"></i>
+            </div>
+            <span class="text-[10px] transition-colors font-medium"
+                  [class]="audioActive() ? 'text-green-600' : 'text-gray-500'">Sound</span>
+        </div>
+        }
+
+        <!-- Fullscreen -->
+        <div class="flex flex-col items-center gap-1 cursor-pointer select-none"
+             (click)="toggleFullscreen()"
+             role="button" tabindex="0" (keydown.enter)="toggleFullscreen()"
+             [attr.aria-label]="(isFullscreen() ? 'session.exitFullscreen' : 'session.fullscreen') | translate">
+            <div class="size-12 rounded-xl flex items-center justify-center transition-colors"
+                 [class]="isFullscreen() ? 'bg-green-500' : 'bg-gray-100'">
+                <i class="pi text-xl transition-colors"
+                   [class.pi-window-maximize]="!isFullscreen()"
+                   [class.pi-window-minimize]="isFullscreen()"
+                   [class]="isFullscreen() ? 'text-white' : 'text-gray-500'"></i>
+            </div>
+            <span class="text-[10px] font-medium transition-colors"
+                  [class]="isFullscreen() ? 'text-green-600' : 'text-gray-500'">
+                {{ (isFullscreen() ? 'session.exitFullscreen' : 'session.fullscreen') | translate }}
+            </span>
+        </div>
+
+    </div>
+
+    <!-- Items list -->
+    <div class="flex-1 min-h-0 overflow-y-auto">
+    <div class="p-3 flex flex-col gap-2">
+
+        <!-- Clipboard -->
+        <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+            <div class="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-gray-50 transition-colors"
+                 (click)="toggleClipboard()" role="button" tabindex="0" (keydown.enter)="toggleClipboard()">
+                <div class="size-10 rounded-xl bg-blue-600 flex items-center justify-center shrink-0 text-white text-base" aria-hidden="true">
+                    <i class="pi pi-copy"></i>
+                </div>
+                <div class="flex-1 flex flex-col">
+                    <span class="text-sm font-semibold text-gray-900">{{ 'session.clipboard' | translate }}</span>
+                    <span class="text-xs text-gray-400">{{ 'session.clipboardDesc' | translate }}</span>
+                </div>
+                <i class="pi pi-ellipsis-h text-gray-300 text-[13px]" aria-hidden="true"></i>
+            </div>
+            @if (clipboardOpen()) {
+            <div class="px-3 pb-3 border-t border-gray-100">
+                <textarea
+                    class="w-full mt-2 resize-y px-2.5 py-2 border border-gray-200 rounded-lg text-[13px] font-[inherit] bg-gray-50 text-gray-900 outline-none focus:border-blue-400 box-border"
+                    [value]="clipboardText()"
+                    (focus)="onClipboardFocus()"
+                    (input)="onClipboardInput($event)"
+                    [placeholder]="'session.clipboardPlaceholder' | translate"
+                    rows="5"
+                    aria-label="Clipboard text">
+                </textarea>
+            </div>
+            }
+        </div>
+
+        <!-- Downloads -->
+         @if (canDownload() && !isGuacSession()) {
+        <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+            <div class="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-gray-50 transition-colors"
+                 (click)="toggleDownloads()" role="button" tabindex="0" (keydown.enter)="toggleDownloads()"
+                 [attr.aria-expanded]="downloadsOpen()">
+                <div class="size-10 rounded-xl bg-blue-600 flex items-center justify-center shrink-0 text-white text-base" aria-hidden="true">
+                    <i class="pi pi-download"></i>
+                </div>
+                <div class="flex-1 flex flex-col">
+                    <span class="text-sm font-semibold text-gray-900">{{ 'session.downloads' | translate }}</span>
+                    <span class="text-xs text-gray-400">{{ 'session.downloadsDesc' | translate }}</span>
+                </div>
+                <i class="pi pi-ellipsis-h text-gray-300 text-[13px]" aria-hidden="true"></i>
+            </div>
+            @if (downloadsOpen()) {
+            <div class="border-t border-gray-100">
+                <div class="flex items-center justify-end px-3 pt-2 pb-1">
+                    <button class="flex items-center p-1 rounded hover:bg-gray-100 text-blue-500"
+                            (click)="loadDownloads()" [disabled]="downloadsLoading()" aria-label="Refresh">
+                        <i class="pi pi-refresh text-[11px]" [class.animate-spin]="downloadsLoading()"></i>
+                    </button>
+                </div>
+                @if (downloadsLoading()) {
+                    <div class="px-3 pb-3 text-xs text-gray-400 text-center py-2">...</div>
+                } @else if (downloads().length === 0) {
+                    <div class="px-3 pb-3 text-xs text-gray-400 text-center py-3">{{ 'session.downloadsEmpty' | translate }}</div>
+                } @else {
+                    <div class="px-2 pb-2 flex flex-col gap-0.5 max-h-48 overflow-y-auto">
+                        @for (file of downloads(); track file.name) {
+                        <div class="flex items-center gap-2 px-2 py-1.5 rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
+                             (click)="downloadFile(file.name)" role="button" tabindex="0"
+                             (keydown.enter)="downloadFile(file.name)">
+                            <i class="pi pi-file text-gray-400 text-sm shrink-0" aria-hidden="true"></i>
+                            <span class="flex-1 text-xs text-gray-700 truncate">{{file.name}}</span>
+                            <span class="text-[10px] text-gray-400 shrink-0">{{formatFileSize(file.size)}}</span>
+                            <i class="pi pi-download text-blue-500 text-sm shrink-0" aria-hidden="true"></i>
+                        </div>
+                        }
+                    </div>
+                }
+            </div>
+            }
+        </div>
+        }
+
+        <!-- Upload -->
+         @if (canUpload() && !isGuacSession()) {
+        <div class="bg-white rounded-xl shadow-sm flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-gray-50 transition-colors"
+             (click)="openUpload()" role="button" tabindex="0" (keydown.enter)="openUpload()"
+             [class.pointer-events-none]="uploading()">
+            <div class="size-10 rounded-xl flex items-center justify-center shrink-0 text-white text-base transition-colors"
+                 [class.bg-blue-600]="!uploadSuccess()"
+                 [class.bg-green-500]="uploadSuccess()" aria-hidden="true">
+                <i class="pi transition-colors"
+                   [class.pi-upload]="!uploading() && !uploadSuccess()"
+                   [class.pi-spinner]="uploading()"
+                   [class.pi-spin]="uploading()"
+                   [class.pi-check]="uploadSuccess()"></i>
+            </div>
+            <div class="flex-1 flex flex-col">
+                <span class="text-sm font-semibold text-gray-900">{{ 'session.upload' | translate }}</span>
+                <span class="text-xs text-gray-400">
+                    @if (uploading()) { {{ 'session.uploading' | translate }} }
+                    @else if (uploadSuccess()) { {{ 'session.uploadSuccess' | translate }} }
+                    @else { {{ 'session.uploadDesc' | translate }} }
+                </span>
+            </div>
+            <i class="pi pi-ellipsis-h text-gray-300 text-[13px]" aria-hidden="true"></i>
+        </div>
+        }
+
+        <!-- Quality (container/KasmVNC sessions only) -->
+        @if (!isGuacSession()) {
+        <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+            <div class="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-gray-50 transition-colors"
+                 (click)="qualityOpen.set(!qualityOpen())" role="button" tabindex="0"
+                 [attr.aria-expanded]="qualityOpen()">
+                <div class="size-10 rounded-xl bg-violet-600 flex items-center justify-center shrink-0 text-white text-base" aria-hidden="true">
+                    <i class="pi pi-sliders-h"></i>
+                </div>
+                <div class="flex-1 flex flex-col">
+                    <span class="text-sm font-semibold text-gray-900">{{ 'session.quality' | translate }}</span>
+                    <span class="text-xs text-gray-400">{{ 'session.qualityDesc' | translate }}</span>
+                </div>
+                <i class="pi text-gray-300 text-[13px] transition-transform"
+                   [class.pi-chevron-down]="!qualityOpen()" [class.pi-chevron-up]="qualityOpen()" aria-hidden="true"></i>
+            </div>
+            @if (qualityOpen()) {
+            <div class="px-3 pb-3 border-t border-gray-100">
+                <div class="flex gap-1 mt-2">
+                    @for (q of qualityOptions; track q.v) {
+                    <button class="flex-1 py-1.5 text-[10px] font-semibold rounded-lg border transition-colors"
+                        [class.bg-blue-600]="qualityLevel() === q.v" [class.text-white]="qualityLevel() === q.v"
+                        [class.border-blue-600]="qualityLevel() === q.v" [class.bg-gray-50]="qualityLevel() !== q.v"
+                        [class.text-gray-600]="qualityLevel() !== q.v" [class.border-gray-200]="qualityLevel() !== q.v"
+                        (click)="setQuality(q.v)" [attr.aria-pressed]="qualityLevel() === q.v">
+                        {{ q.key | translate }}
+                    </button>
+                    }
+                </div>
+            </div>
+            }
+        </div>
+        }
+
+        <!-- Resize mode (container sessions only) -->
+        @if (!isGuacSession()) {
+        <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+            <div class="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-gray-50 transition-colors"
+                 (click)="resizeOpen.set(!resizeOpen())" role="button" tabindex="0"
+                 [attr.aria-expanded]="resizeOpen()">
+                <div class="size-10 rounded-xl bg-indigo-500 flex items-center justify-center shrink-0 text-white text-base" aria-hidden="true">
+                    <i class="pi pi-desktop"></i>
+                </div>
+                <div class="flex-1 flex flex-col">
+                    <span class="text-sm font-semibold text-gray-900">{{ 'session.resize' | translate }}</span>
+                    <span class="text-xs text-gray-400">{{ 'session.resizeDesc' | translate }}</span>
+                </div>
+                <i class="pi text-gray-300 text-[13px] transition-transform"
+                   [class.pi-chevron-down]="!resizeOpen()" [class.pi-chevron-up]="resizeOpen()" aria-hidden="true"></i>
+            </div>
+            @if (resizeOpen()) {
+            <div class="px-3 pb-3 border-t border-gray-100 flex flex-col gap-2">
+                <div class="flex gap-1 mt-2">
+                    @for (m of resizeOptions; track m.v) {
+                    <button class="flex-1 py-1.5 text-[10px] font-semibold rounded-lg border transition-colors"
+                        [class.bg-indigo-500]="resizeMode() === m.v" [class.text-white]="resizeMode() === m.v"
+                        [class.border-indigo-500]="resizeMode() === m.v" [class.bg-gray-50]="resizeMode() !== m.v"
+                        [class.text-gray-600]="resizeMode() !== m.v" [class.border-gray-200]="resizeMode() !== m.v"
+                        (click)="setResize(m.v)" [attr.aria-pressed]="resizeMode() === m.v">
+                        {{ m.key | translate }}
+                    </button>
+                    }
+                </div>
+                @if (resizeMode() === 'scale') {
+                <div class="flex gap-1">
+                    @for (r of resolutionPresets; track r.l) {
+                    <button class="flex-1 py-1 text-[10px] font-medium rounded-lg border border-gray-200 bg-gray-50 text-gray-600 hover:bg-gray-100 transition-colors"
+                        (click)="setResolution(r.w, r.h)">{{r.l}}</button>
+                    }
+                </div>
+                }
+            </div>
+            }
+        </div>
+
+        <!-- Controls row: Game Mode, Keyboard, Displays -->
+        <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+            <div class="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-gray-50 transition-colors"
+                 (click)="controlsOpen.set(!controlsOpen())" role="button" tabindex="0"
+                 [attr.aria-expanded]="controlsOpen()">
+                <div class="size-10 rounded-xl bg-teal-500 flex items-center justify-center shrink-0 text-white text-base" aria-hidden="true">
+                    <i class="pi pi-sliders-v"></i>
+                </div>
+                <div class="flex-1 flex flex-col">
+                    <span class="text-sm font-semibold text-gray-900">{{ 'session.controls' | translate }}</span>
+                </div>
+                <i class="pi text-gray-300 text-[13px] transition-transform"
+                   [class.pi-chevron-down]="!controlsOpen()" [class.pi-chevron-up]="controlsOpen()" aria-hidden="true"></i>
+            </div>
+            @if (controlsOpen()) {
+            <div class="border-t border-gray-100 divide-y divide-gray-100">
+                <div class="flex items-center justify-between px-4 py-2.5 cursor-pointer hover:bg-gray-50" (click)="toggleGameMode()" role="button" tabindex="0">
+                    <div class="flex items-center gap-2">
+                        <i class="pi pi-gaming text-gray-500 text-sm" aria-hidden="true"></i>
+                        <span class="text-sm text-gray-700">{{ 'session.gameMode' | translate }}</span>
+                    </div>
+                    <div class="w-8 h-4 rounded-full transition-colors flex items-center px-0.5"
+                         [class.bg-teal-500]="gameModeActive()" [class.bg-gray-200]="!gameModeActive()">
+                        <div class="w-3 h-3 rounded-full bg-white shadow transition-transform"
+                             [class.translate-x-4]="gameModeActive()"></div>
+                    </div>
+                </div>
+                <div class="flex items-center justify-between px-4 py-2.5 cursor-pointer hover:bg-gray-50" (click)="toggleKeyboard()" role="button" tabindex="0">
+                    <div class="flex items-center gap-2">
+                        <i class="pi pi-tablet text-gray-500 text-sm" aria-hidden="true"></i>
+                        <span class="text-sm text-gray-700">{{ 'session.keyboard' | translate }}</span>
+                    </div>
+                    <div class="w-8 h-4 rounded-full transition-colors flex items-center px-0.5"
+                         [class.bg-teal-500]="keyboardVisible()" [class.bg-gray-200]="!keyboardVisible()">
+                        <div class="w-3 h-3 rounded-full bg-white shadow transition-transform"
+                             [class.translate-x-4]="keyboardVisible()"></div>
+                    </div>
+                </div>
+                @if (canControlDisplays()) {
+                <div class="flex items-center justify-between px-4 py-2.5 cursor-pointer hover:bg-gray-50" (click)="toggleDisplays()" role="button" tabindex="0">
+                    <div class="flex items-center gap-2">
+                        <i class="pi pi-th-large text-gray-500 text-sm" aria-hidden="true"></i>
+                        <span class="text-sm text-gray-700">{{ 'session.displays' | translate }}</span>
+                    </div>
+                    <div class="w-8 h-4 rounded-full transition-colors flex items-center px-0.5"
+                         [class.bg-teal-500]="displaysOpen()" [class.bg-gray-200]="!displaysOpen()">
+                        <div class="w-3 h-3 rounded-full bg-white shadow transition-transform"
+                             [class.translate-x-4]="displaysOpen()"></div>
+                    </div>
+                </div>
+                }
+            </div>
+            }
+        </div>
+
+        <!-- Advanced: HiDPI, Threading, WebRTC, PerfStats -->
+        <div class="bg-white rounded-xl shadow-sm overflow-hidden">
+            <div class="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-gray-50 transition-colors"
+                 (click)="advancedOpen.set(!advancedOpen())" role="button" tabindex="0"
+                 [attr.aria-expanded]="advancedOpen()">
+                <div class="size-10 rounded-xl bg-gray-600 flex items-center justify-center shrink-0 text-white text-base" aria-hidden="true">
+                    <i class="pi pi-cog"></i>
+                </div>
+                <div class="flex-1 flex flex-col">
+                    <span class="text-sm font-semibold text-gray-900">{{ 'session.advanced' | translate }}</span>
+                </div>
+                <i class="pi text-gray-300 text-[13px] transition-transform"
+                   [class.pi-chevron-down]="!advancedOpen()" [class.pi-chevron-up]="advancedOpen()" aria-hidden="true"></i>
+            </div>
+            @if (advancedOpen()) {
+            <div class="border-t border-gray-100 divide-y divide-gray-100">
+                <div class="flex items-center justify-between px-4 py-2.5 cursor-pointer hover:bg-gray-50" (click)="toggleHidpi()" role="button" tabindex="0">
+                    <span class="text-sm text-gray-700">{{ 'session.hidpi' | translate }}</span>
+                    <div class="w-8 h-4 rounded-full transition-colors flex items-center px-0.5" [class.bg-gray-600]="hidpiActive()" [class.bg-gray-200]="!hidpiActive()">
+                        <div class="w-3 h-3 rounded-full bg-white shadow transition-transform" [class.translate-x-4]="hidpiActive()"></div>
+                    </div>
+                </div>
+                <div class="flex items-center justify-between px-4 py-2.5 cursor-pointer hover:bg-gray-50" (click)="toggleThreading()" role="button" tabindex="0">
+                    <span class="text-sm text-gray-700">{{ 'session.threading' | translate }}</span>
+                    <div class="w-8 h-4 rounded-full transition-colors flex items-center px-0.5" [class.bg-gray-600]="threadingActive()" [class.bg-gray-200]="!threadingActive()">
+                        <div class="w-3 h-3 rounded-full bg-white shadow transition-transform" [class.translate-x-4]="threadingActive()"></div>
+                    </div>
+                </div>
+                <div class="flex items-center justify-between px-4 py-2.5 cursor-pointer hover:bg-gray-50" (click)="toggleWebrtc()" role="button" tabindex="0">
+                    <span class="text-sm text-gray-700">{{ 'session.webrtc' | translate }}</span>
+                    <div class="w-8 h-4 rounded-full transition-colors flex items-center px-0.5" [class.bg-gray-600]="webrtcActive()" [class.bg-gray-200]="!webrtcActive()">
+                        <div class="w-3 h-3 rounded-full bg-white shadow transition-transform" [class.translate-x-4]="webrtcActive()"></div>
+                    </div>
+                </div>
+                <div class="flex items-center justify-between px-4 py-2.5 cursor-pointer hover:bg-gray-50" (click)="togglePerfStats()" role="button" tabindex="0">
+                    <span class="text-sm text-gray-700">{{ 'session.perfStats' | translate }}</span>
+                    <div class="w-8 h-4 rounded-full transition-colors flex items-center px-0.5" [class.bg-gray-600]="perfStatsActive()" [class.bg-gray-200]="!perfStatsActive()">
+                        <div class="w-3 h-3 rounded-full bg-white shadow transition-transform" [class.translate-x-4]="perfStatsActive()"></div>
+                    </div>
+                </div>
+            </div>
+            }
+        </div>
+        }
+
+        <div class="h-px bg-gray-200 mx-1"></div>
+
+        <!-- Disconnect -->
+        <div class="bg-white rounded-xl shadow-sm flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-gray-50 transition-colors"
+             (click)="disconnect()" role="button" tabindex="0" (keydown.enter)="disconnect()">
+            <div class="size-10 rounded-xl bg-orange-500 flex items-center justify-center shrink-0 text-white text-base" aria-hidden="true">
+                <i class="pi pi-sign-out"></i>
+            </div>
+            <div class="flex-1 flex flex-col">
+                <span class="text-sm font-semibold text-gray-900">{{ 'session.disconnect' | translate }}</span>
+                <span class="text-xs text-gray-400">{{ 'session.disconnectDesc' | translate }}</span>
+            </div>
+            <i class="pi pi-chevron-right text-gray-300 text-[13px]" aria-hidden="true"></i>
+        </div>
+
+        <!-- Terminate -->
+        <div class="bg-white rounded-xl shadow-sm flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-gray-50 transition-colors"
+             (click)="terminate()" role="button" tabindex="0" (keydown.enter)="terminate()">
+            <div class="size-10 rounded-xl bg-red-500 flex items-center justify-center shrink-0 text-white text-base" aria-hidden="true">
+                <i class="pi pi-trash"></i>
+            </div>
+            <div class="flex-1 flex flex-col">
+                <span class="text-sm font-semibold text-gray-900">{{ 'session.terminate' | translate }}</span>
+                <span class="text-xs text-gray-400">{{ 'session.terminateDesc' | translate }}</span>
+            </div>
+            <i class="pi pi-chevron-right text-gray-300 text-[13px]" aria-hidden="true"></i>
+        </div>
+
+    </div>
+    </div>
+</div>
+
+@if (iframeUrl()) {
+<iframe #vncIframe [src]="iframeUrl()!" title="Session" allow="autoplay; clipboard-read; clipboard-write; fullscreen; keyboard-map"></iframe>
+<audio #audioElement></audio>
+}
+
+@if (!connected()) {
+<div class="fixed inset-0 bg-gray flex justify-center items-center z-[9999] backdrop-blur-[5px]">
+    <div class="text-center p-4 rounded-border" style="background-color: var(--surface-ground);">
+        @if (connectionFailed()) {
+            <i class="pi pi-exclamation-circle text-6xl text-red-400 mb-4 block"></i>
+        } @else {
+            <div class="relative flex justify-center items-center mb-4">
+                @if (instance()?.tide?.image_path) {
+                    <img [src]="instance()?.tide?.image_path" [alt]="instance()?.tide?.display_name" class="absolute w-[50px] z-10" />
+                } @else {
+                    <i [class]="getTypeIcon(instance()?.tide?.tide_type!) + ' text-4xl text-surface-400'"></i>
+                }
+                <div class="w-[70px] h-[70px] rounded-full border-4 border-surface-200 border-t-blue-400 animate-spin"></div>
+            </div>
+        }
+        <div class="font-bold text-4xl tracking-[1px] mb-1">{{instance()?.tide?.display_name}}</div>
+        <span [class]="connectionFailed() ? 'text-red-300 tracking-[1px]' : 'tracking-[1px]'">{{progress()}}</span>
+    </div>
+</div>
+}

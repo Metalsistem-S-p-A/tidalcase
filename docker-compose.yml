@@ -1,0 +1,293 @@
+---
+# Tidalcase — public reference docker-compose
+#
+# All secrets, hostnames and image references are pulled from a `.env` file
+# next to this compose file. Copy `.env.example` to `.env` and fill in your
+# values before running `docker compose up -d`.
+#
+# Optional profiles (enable with `--profile <name>`):
+#   db        → bundled PostgreSQL (otherwise use any external DB via DATABASE_URL)
+#   auth      → Authentik SSO (server + worker)
+#   registry  → bundled Docker registry for tide images
+#   agent     → run a Tidalcase agent on this host (see docs/agents.md)
+#
+# Default: `docker compose up -d` brings up the manager stack
+# (traefik + backend + frontend + redis + celery worker/beat).
+
+services:
+
+  tidalcase-traefik:
+    image: traefik:v3
+    container_name: tidalcase-traefik
+    restart: unless-stopped
+    environment:
+      TZ: "Europe/Rome"
+    command:
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+      - --providers.file.directory=/certs
+      - --entrypoints.web.address=:80
+      - --entrypoints.websecure.address=:443
+      - --entrypoints.authentik.address=:9443
+      - --entrypoints.registry.address=:5443
+      - --entrypoints.web.http.redirections.entrypoint.to=websecure
+      - --entrypoints.web.http.redirections.entrypoint.scheme=https
+    ports:
+      - "80:80"
+      - "443:443"
+      - "9443:9443"
+      - "5443:5443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /etc/tidalcase/certs:/certs:ro
+    networks:
+      - tidalcase-network
+
+  tidalcase-backend:
+    image: ghcr.io/mlongo-metalsistemspa/tidalcase-backend:latest
+    container_name: tidalcase-backend
+    restart: unless-stopped
+    volumes:
+      - tidalcase-data:/app/data
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      TZ: "Europe/Rome"
+      SERVICE_TYPE: backend
+      FLASK_DEBUG: 0
+      DATABASE_URL: ${DATABASE_URL}
+      SECRET_KEY: ${SECRET_KEY}
+      CELERY_BROKER_URL: redis://tidalcase-redis:6379/0
+      CELERY_RESULT_BACKEND: redis://tidalcase-redis:6379/0
+    networks:
+      - tidalcase-network
+    depends_on:
+      - tidalcase-redis
+
+  tidalcase-frontend:
+    image: ghcr.io/mlongo-metalsistemspa/tidalcase-frontend:latest
+    container_name: tidalcase-frontend
+    restart: unless-stopped
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.tidalcase.rule=Host(`${DOMAIN}`)
+      - traefik.http.routers.tidalcase.entrypoints=websecure
+      - traefik.http.routers.tidalcase.tls=true
+      - traefik.http.services.tidalcase.loadbalancer.server.port=80
+    depends_on:
+      - tidalcase-backend
+    networks:
+      - tidalcase-network
+
+  tidalcase-redis:
+    image: redis:8-alpine
+    container_name: tidalcase-redis
+    restart: unless-stopped
+    environment:
+      TZ: "Europe/Rome"
+    volumes:
+      - tidalcase-redis:/data
+    networks:
+      - tidalcase-network
+
+  tidalcase-celery-worker:
+    image: ghcr.io/mlongo-metalsistemspa/tidalcase-backend:latest
+    container_name: tidalcase-celery-worker
+    restart: unless-stopped
+    volumes:
+      - tidalcase-data:/app/data
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      TZ: "Europe/Rome"
+      DATABASE_URL: ${DATABASE_URL}
+      SECRET_KEY: ${SECRET_KEY}
+      CELERY_BROKER_URL: redis://tidalcase-redis:6379/0
+      CELERY_RESULT_BACKEND: redis://tidalcase-redis:6379/0
+    command: python -m celery -A run.celery_app worker --loglevel=info
+    networks:
+      - tidalcase-network
+    depends_on:
+      - tidalcase-redis
+
+  tidalcase-celery-beat:
+    image: ghcr.io/mlongo-metalsistemspa/tidalcase-backend:latest
+    container_name: tidalcase-celery-beat
+    restart: unless-stopped
+    environment:
+      TZ: "Europe/Rome"
+      CELERY_BROKER_URL: redis://tidalcase-redis:6379/0
+    command: celery -A run.celery_app beat --loglevel=info
+    networks:
+      - tidalcase-network
+    depends_on:
+      - tidalcase-redis
+
+  # --- Optional: PostgreSQL (--profile db) ---
+  tidalcase-postgres:
+    profiles: [db]
+    image: postgres:18
+    container_name: tidalcase-postgres
+    restart: unless-stopped
+    environment:
+      TZ: "Europe/Rome"
+      POSTGRES_DB: ${POSTGRES_DB:-tidalcase}
+      POSTGRES_USER: ${POSTGRES_USER:-tidalcase}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-tidalcase}
+    volumes:
+      - tidalcase-postgres:/var/lib/postgresql
+    networks:
+      - tidalcase-network
+
+  # --- Optional: Authentik SSO (--profile auth) ---
+  tidalcase-authentik:
+    profiles: [auth]
+    image: ghcr.io/goauthentik/server:latest
+    container_name: tidalcase-authentik
+    command: server
+    restart: unless-stopped
+    environment:
+      TZ: "Europe/Rome"
+      AUTHENTIK_REDIS__HOST: tidalcase-redis
+      AUTHENTIK_POSTGRESQL__HOST: ${AUTHENTIK_PG_HOST:-tidalcase-postgres}
+      AUTHENTIK_POSTGRESQL__USER: ${AUTHENTIK_PG_USER}
+      AUTHENTIK_POSTGRESQL__PASSWORD: ${AUTHENTIK_PG_PASSWORD}
+      AUTHENTIK_POSTGRESQL__NAME: ${AUTHENTIK_PG_DB:-authentik}
+      AUTHENTIK_SECRET_KEY: ${AUTHENTIK_SECRET_KEY}
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.authentik.rule=Host(`${DOMAIN}`)
+      - traefik.http.routers.authentik.entrypoints=authentik
+      - traefik.http.routers.authentik.tls=true
+      - traefik.http.services.authentik.loadbalancer.server.port=9000
+    depends_on:
+      - tidalcase-redis
+    networks:
+      - tidalcase-network
+
+  authentik-worker:
+    profiles: [auth]
+    image: ghcr.io/goauthentik/server:latest
+    container_name: tidalcase-authentik-worker
+    command: worker
+    restart: unless-stopped
+    environment:
+      TZ: "Europe/Rome"
+      AUTHENTIK_REDIS__HOST: tidalcase-redis
+      AUTHENTIK_POSTGRESQL__HOST: ${AUTHENTIK_PG_HOST:-tidalcase-postgres}
+      AUTHENTIK_POSTGRESQL__USER: ${AUTHENTIK_PG_USER}
+      AUTHENTIK_POSTGRESQL__PASSWORD: ${AUTHENTIK_PG_PASSWORD}
+      AUTHENTIK_POSTGRESQL__NAME: ${AUTHENTIK_PG_DB:-authentik}
+      AUTHENTIK_SECRET_KEY: ${AUTHENTIK_SECRET_KEY}
+    depends_on:
+      - tidalcase-redis
+    networks:
+      - tidalcase-network
+
+  tidalcase-registry:
+    profiles: [registry]
+    image: ${TIDALCASE_REGISTRY_IMAGE:-ghcr.io/mlongo-metalsistemspa/tidalcase-registry:latest}
+    container_name: tidalcase-registry
+    restart: unless-stopped
+    environment:
+      TZ: "Europe/Rome"
+      REGISTRY_HTTP_ADDR: 127.0.0.1:5001
+      REGISTRY_NAME: ${REGISTRY_NAME:-Tidalcase Registry}
+      REGISTRY_IMAGE_PREFIX: ${REGISTRY_IMAGE_PREFIX:-}
+      ICONS_DIR: /icons
+    volumes:
+      - registry_data:/var/lib/registry
+      - /etc/tidalcase/registry/icons:/icons:ro
+    networks:
+      - tidalcase-network
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.registry.rule=Host(`${DOMAIN}`)
+      - traefik.http.routers.registry.entrypoints=registry
+      - traefik.http.routers.registry.tls=true
+      - traefik.http.services.registry.loadbalancer.server.port=5000
+
+  tidalcase-agent:
+    profiles: [agent]
+    image: ${TIDALCASE_AGENT_IMAGE:-ghcr.io/mlongo-metalsistemspa/tidalcase-agent:latest}
+    container_name: tidalcase-agent
+    restart: unless-stopped
+    user: "root"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - agent-data:/agent/data
+      - /etc/tidalcase/configs:/tmp/tidalcase_configs
+      - /etc/tidalcase/certs:/certs:ro
+      - vnc-nginx-instances:/nginx-instances
+    environment: &agent-env
+      FLASK_DEBUG: 0
+      TZ: "Europe/Rome"
+      TIDALCASE_JOIN_TOKEN: ${TIDALCASE_JOIN_TOKEN}
+      TIDALCASE_MANAGER_URL: ${TIDALCASE_MANAGER_URL}
+      TIDALCASE_AGENT_URL: ${TIDALCASE_AGENT_URL}
+      TIDALCASE_CONFIG_HOST_DIR: "/etc/tidalcase/configs"
+      TIDALCASE_CERTS_HOST_DIR: "/etc/tidalcase/certs"
+      CELERY_BROKER_URL: "redis://tidalcase-redis:6379/1"
+      CELERY_RESULT_BACKEND: "redis://tidalcase-redis:6379/1"
+    networks:
+      - tidalcase-network
+
+  tidalcase-agent-nginx:
+    profiles: [agent]
+    image: ${TIDALCASE_AGENT_NGINX_IMAGE:-ghcr.io/mlongo-metalsistemspa/tidalcase-agent-nginx:latest}
+    container_name: tidalcase-agent-nginx
+    restart: unless-stopped
+    environment:
+      <<: *agent-env
+    volumes:
+      - /etc/tidalcase/certs:/certs:ro
+      - vnc-nginx-instances:/etc/nginx/conf.d/instances:ro
+    ports:
+      - "0.0.0.0:7443:7443"
+    networks:
+      - tidalcase-network
+    depends_on:
+      - tidalcase-agent
+
+  tidalcase-agent-celery-worker:
+    profiles: [agent]
+    image: ${TIDALCASE_AGENT_IMAGE:-ghcr.io/mlongo-metalsistemspa/tidalcase-agent:latest}
+    container_name: tidalcase-agent-celery-worker
+    restart: unless-stopped
+    user: "root"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - agent-data:/agent/data
+    environment:
+      <<: *agent-env
+    command: celery -A app.celery_app worker --loglevel=info --concurrency=4 -Q monitor
+    networks:
+      - tidalcase-network
+    depends_on:
+      - tidalcase-redis
+
+  tidalcase-agent-celery-beat:
+    profiles: [agent]
+    image: ${TIDALCASE_AGENT_IMAGE:-ghcr.io/mlongo-metalsistemspa/tidalcase-agent:latest}
+    container_name: tidalcase-agent-celery-beat
+    restart: unless-stopped
+    user: "root"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      <<: *agent-env
+    command: celery -A app.celery_app beat --loglevel=info
+    networks:
+      - tidalcase-network
+    depends_on:
+      - tidalcase-redis
+
+networks:
+  tidalcase-network:
+    name: tidalcase-network
+
+volumes:
+  tidalcase-data:
+  tidalcase-redis:
+  tidalcase-postgres:
+  registry_data:
+  agent-data:
+  vnc-nginx-instances:

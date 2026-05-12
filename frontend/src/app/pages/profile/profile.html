@@ -1,0 +1,277 @@
+<div class="card">
+    <h2 class="mb-4">{{ 'profile.title' | translate }}</h2>
+
+    <p-tabs value="user_info">
+        <p-tablist>
+            <p-tab value="user_info">
+                <i class="pi pi-user mr-2"></i>
+                <span>{{ 'profile.userInformation' | translate }}</span>
+            </p-tab>
+            @if (isLocalOrLdapUser()) {
+            <p-tab value="two_factor_authentication">
+                <i class="pi pi-shield mr-2"></i>
+                <span>{{ 'mfa.title' | translate }}</span>
+            </p-tab>
+            }
+            @if (isLocalUser()) {
+            <p-tab value="password_change">
+                <i class="pi pi-lock mr-2"></i>
+                <span>{{ 'auth.changePassword' | translate }}</span>
+            </p-tab>
+            }
+        </p-tablist>
+
+        <p-tabpanels>
+            <!-- Account Tab -->
+            <p-tabpanel value="user_info">
+
+                <div class="flex flex-col gap-2 mb-4">
+                    <label class="block font-medium text-surface-700 dark:text-surface-200">{{ 'auth.username' |
+                        translate }}</label>
+                    <input pInputText class="text-surface-900 dark:text-surface-0" [value]="currentUser()?.username"
+                        disabled />
+                </div>
+
+                @if (currentUser()?.authProviderName) {
+                <div class="flex flex-col gap-2 mb-4">
+                    <label class="block font-medium text-surface-700 dark:text-surface-200">{{
+                        'profile.authProvider' |
+                        translate }}</label>
+                    <input pInputText class="text-surface-900 dark:text-surface-0"
+                        [value]="currentUser()?.authProviderName" disabled />
+                </div>
+                }
+
+                <div class="flex flex-col gap-2 mb-4">
+                    <label for="email" class="block font-medium text-surface-700 dark:text-surface-200">{{
+                        'auth.email' | translate }}</label>
+                    <input pInputText id="email" [ngModel]="email()" (ngModelChange)="email.set($event)"
+                        class="w-full" [placeholder]="'auth.email' | translate" type="email" />
+                    <small class="block text-surface-600 dark:text-surface-400">{{ 'auth.emailDescription' |
+                        translate }}</small>
+                </div>
+
+                <div class="flex flex-col gap-2 mb-4">
+                <p-button [label]="'common.save' | translate" icon="pi pi-check" (onClick)="updateEmail()"
+                    [loading]="isLoadingEmail()"></p-button>
+                </div>
+
+                <div class="flex flex-col gap-2 mb-4">
+                    <label for="auto_start_tide_id" class="font-medium">{{ 'users.autoStartTide' | translate }}</label>
+                    <p-select id="auto_start_tide_id" [(ngModel)]="autostartTide"
+                        [options]="availableTides()" optionLabel="label" optionValue="value"
+                        [showClear]="true" [placeholder]="'users.autoStartTideNone' | translate"
+                        [fluid]="true" appendTo="body">
+                    </p-select>
+                </div>
+
+                <p-button [label]="'common.save' | translate" icon="pi pi-check" (onClick)="updateAutostartTide()"></p-button>
+            </p-tabpanel>
+            @if (isLocalOrLdapUser()) {
+            <!-- Mfa Tab -->
+            <p-tabpanel value="two_factor_authentication">
+
+                @if (!mfaEnabled()) {
+                <div class="flex flex-col gap-3">
+                    <div>
+                        <p-button [label]="'mfa.enable' | translate" icon="pi pi-lock" (onClick)="startMfaSetup()"
+                            [loading]="isLoadingMfa()"></p-button>
+                    </div>
+                </div>
+                } @else {
+                <div class="flex flex-col gap-3">
+                    <p-message severity="success" [text]="'common.enabled' | translate"></p-message>
+
+                    <div class="flex flex-col gap-2">
+                        <label for="mfaTrustDuration" class="block font-medium text-surface-700 dark:text-surface-200">
+                            {{ 'mfa.trustDuration' | translate }}
+                        </label>
+                        <div class="flex items-center gap-2">
+                            <input pInputText id="mfaTrustDuration" [ngModel]="mfaTrustDuration()"
+                                (ngModelChange)="mfaTrustDuration.set($event)" type="number" min="0"
+                                max="365" class="w-24" />
+                            <span class="text-surface-600 dark:text-surface-400">{{ 'days' | translate }}</span>
+                        </div>
+                        <small class="text-surface-600 dark:text-surface-400">
+                            {{ 'mfa.trustDurationHint' | translate }}
+                        </small>
+                        <p-button [label]="'common.save' | translate" icon="pi pi-check"
+                            (onClick)="updateMfaTrustDuration()" [loading]="isLoadingMfaTrust()"
+                            styleClass="w-fit mt-2"></p-button>
+                    </div>
+
+                    <div class="flex flex-col gap-2 mt-4">
+                        <label class="block font-medium text-surface-700 dark:text-surface-200">
+                            {{ 'mfa.trustedDevices' | translate }}
+                        </label>
+                        <p-button [label]="'mfa.viewTrustedDevices' | translate" icon="pi pi-mobile"
+                            (onClick)="loadTrustedDevices()" severity="secondary" [outlined]="true"></p-button>
+                    </div>
+
+                    <div>
+                        <p-button [label]="'mfa.disable' | translate" icon="pi pi-lock-open"
+                            (onClick)="openDisableMfaDialog()" severity="danger" [loading]="isLoadingMfa()"></p-button>
+                    </div>
+                </div>
+                }
+            </p-tabpanel>
+            }
+            <!-- Change password tab -->
+            @if (isLocalUser()) {
+            <p-tabpanel value="password_change">
+
+                <div class="flex flex-col gap-2 mb-4">
+                    <label for="currentPassword" class="block font-medium ext-surface-700 dark:text-surface-200">{{
+                        'auth.currentPassword' | translate }} *</label>
+                    <p-password id="currentPassword" [ngModel]="currentPassword()"
+                        (ngModelChange)="currentPassword.set($event)" [toggleMask]="true"
+                        [feedback]="false" [fluid]="true"
+                        [placeholder]="'auth.currentPassword' | translate"></p-password>
+                </div>
+
+                <div class="flex flex-col gap-2 mb-4">
+                    <label for="newPassword" class="block font-medium text-surface-700 dark:text-surface-200">{{
+                        'auth.newPassword' |
+                        translate }} *</label>
+                    <p-password id="newPassword" [ngModel]="newPassword()" (ngModelChange)="newPassword.set($event)"
+                        [toggleMask]="true" [feedback]="true"
+                        [fluid]="true" [placeholder]="'auth.newPassword' | translate"></p-password>
+                </div>
+
+                <div class="flex flex-col gap-2 mb-4">
+                    <label for="confirmPassword" class="block font-medium text-surface-700 dark:text-surface-200">{{
+                        'auth.confirmPassword' | translate }} *</label>
+                    <p-password id="confirmPassword" [ngModel]="confirmPassword()"
+                        (ngModelChange)="confirmPassword.set($event)" [toggleMask]="true"
+                        [feedback]="false" [fluid]="true"
+                        [placeholder]="'auth.confirmPassword' | translate"></p-password>
+                </div>
+
+                <p-button [label]="'auth.changePassword' | translate" icon="pi pi-check" (onClick)="changePassword()"
+                    [loading]="isLoading()"></p-button>
+            </p-tabpanel>
+            }
+        </p-tabpanels>
+    </p-tabs>
+</div>
+
+<!-- MFA Setup Dialog -->
+<p-dialog [visible]="mfaSetupDialog()" (visibleChange)="mfaSetupDialog.set($event)"
+    [header]="'mfa.setup' | translate" [modal]="true" [closable]="true"
+    [style]="{ width: '500px' }" (onHide)="cancelMfaSetup()">
+    <div class="flex flex-col gap-5 p-2">
+        <p class="text-surface-700 dark:text-surface-200">{{ 'mfa.instructions' | translate }}</p>
+
+        @if (mfaQrCode()) {
+        <div class="text-center py-3">
+            <img [src]="mfaQrCode()" alt="QR Code" class="mx-auto shadow-md rounded" style="max-width: 250px;" />
+        </div>
+
+        <div class="flex flex-col gap-2">
+            <label class="block font-medium text-surface-700 dark:text-surface-200">{{ 'mfa.secretKey' | translate
+                }}</label>
+            <code
+                class="block bg-surface-100 dark:bg-surface-800 p-3 rounded text-sm break-all border border-surface-200 dark:border-surface-700">{{ mfaSecret() }}</code>
+            <small class="block mt-2 text-surface-600 dark:text-surface-400">{{ 'mfa.secretManualEntry' | translate
+                }}</small>
+        </div>
+
+        <div class="flex flex-col gap-2">
+            <label for="mfaToken" class="block font-medium text-surface-700 dark:text-surface-200">{{
+                'mfa.verificationCode' | translate }} *</label>
+            <input pInputText id="mfaToken" [ngModel]="mfaToken()" (ngModelChange)="mfaToken.set($event)"
+                [placeholder]="'mfa.enterCode' | translate" maxlength="6" class="w-full" />
+        </div>
+        }
+    </div>
+
+    <ng-template #footer>
+        <p-button [label]="'common.cancel' | translate" icon="pi pi-times" (onClick)="cancelMfaSetup()"
+            severity="secondary"></p-button>
+        <p-button [label]="'mfa.verifyEnable' | translate" icon="pi pi-check" (onClick)="verifyAndEnableMfa()"
+            [loading]="isLoadingMfa()" [disabled]="!mfaToken() || mfaToken().length !== 6"></p-button>
+    </ng-template>
+</p-dialog>
+
+<!-- MFA Disable Dialog -->
+<p-dialog [visible]="mfaDisableDialog()" (visibleChange)="mfaDisableDialog.set($event)"
+    [header]="'mfa.disable' | translate" [modal]="true" [closable]="true"
+    [style]="{ width: '450px' }" (onHide)="cancelMfaDisable()">
+    <div class="flex flex-col gap-5 p-2">
+        <p class="text-surface-700 dark:text-surface-200">{{ 'mfa.disableWarning' | translate }}</p>
+
+        @if (isLocalUser()) {
+        <div class="flex flex-col gap-2">
+            <label for="mfaPassword" class="block font-medium text-surface-700 dark:text-surface-200">{{
+                'auth.password'
+                | translate }} *</label>
+            <p-password id="mfaPassword" [ngModel]="mfaPassword()" (ngModelChange)="mfaPassword.set($event)"
+                [toggleMask]="true" [feedback]="false" [fluid]="true"
+                [placeholder]="'auth.password' | translate"></p-password>
+        </div>
+        }
+
+        <div class="flex flex-col gap-2">
+            <label for="mfaDisableToken" class="block font-medium text-surface-700 dark:text-surface-200">{{
+                'mfa.verificationCode' | translate }} *</label>
+            <input pInputText id="mfaDisableToken" [ngModel]="mfaToken()" (ngModelChange)="mfaToken.set($event)"
+                [placeholder]="'mfa.enterCode' | translate" maxlength="6" class="w-full" />
+        </div>
+    </div>
+
+    <ng-template #footer>
+        <p-button [label]="'common.cancel' | translate" icon="pi pi-times" (onClick)="cancelMfaDisable()"
+            severity="secondary"></p-button>
+        <p-button [label]="'mfa.disable' | translate" icon="pi pi-lock-open" (onClick)="disableMfa()" severity="danger"
+            [loading]="isLoadingMfa()"></p-button>
+    </ng-template>
+</p-dialog>
+
+<p-confirmDialog acceptIcon="pi pi-check" rejectIcon="pi pi-times" />
+
+<!-- Trusted Devices Dialog -->
+<p-dialog [visible]="showTrustedDevicesDialog()" (visibleChange)="showTrustedDevicesDialog.set($event)"
+    [header]="'mfa.trustedDevices' | translate" [modal]="true"
+    [style]="{ width: '700px' }">
+    <div class="flex flex-col gap-4">
+        @if (trustedDevices().length === 0) {
+        <p-message severity="info" [text]="'mfa.noTrustedDevices' | translate"></p-message>
+        } @else {
+        <p-table [value]="trustedDevices()" [tableStyle]="{ 'min-width': '100%' }">
+            <ng-template #header>
+                <tr>
+                    <th>{{ 'mfa.deviceName' | translate }}</th>
+                    <th>{{ 'mfa.lastUsed' | translate }}</th>
+                    <th>{{ 'mfa.expiresAt' | translate }}</th>
+                    <th style="width: 100px">{{ 'common.actions' | translate }}</th>
+                </tr>
+            </ng-template>
+            <ng-template #body let-device>
+                <tr>
+                    <td>
+                        <div class="flex flex-col">
+                            <span class="font-medium">{{ device.deviceName || 'Unknown Device' }}</span>
+                            <small class="text-surface-600 dark:text-surface-400">{{ device.ipAddress }}</small>
+                        </div>
+                    </td>
+                    <td>{{ device.lastUsedAt | date: 'short' }}</td>
+                    <td>{{ device.expiresAt | date: 'short' }}</td>
+                    <td>
+                        <p-button icon="pi pi-trash" (onClick)="revokeTrustedDevice(device.deviceId)" severity="danger"
+                            [text]="true" size="small" [pTooltip]="'mfa.revoke' | translate"></p-button>
+                    </td>
+                </tr>
+            </ng-template>
+        </p-table>
+        }
+    </div>
+
+    <ng-template #footer>
+        @if (trustedDevices().length > 0) {
+        <p-button [label]="'mfa.revokeAll' | translate" icon="pi pi-trash" (onClick)="revokeAllTrustedDevices()"
+            severity="danger" [text]="true" />
+        }
+        <p-button [label]="'common.close' | translate" icon="pi pi-times"
+            (onClick)="showTrustedDevicesDialog.set(false)" severity="secondary" />
+    </ng-template>
+</p-dialog>

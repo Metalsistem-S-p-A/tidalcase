@@ -1,0 +1,19 @@
+.layout-main-container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    padding: 6rem 2rem 0 2rem;
+    transition: margin-left var(--layout-section-transition-duration);
+    box-sizing: border-box;
+}
+
+.layout-main {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    padding-bottom: 2rem;
+}
+
+img {
+    max-width: none !important;
+}

@@ -1,0 +1,130 @@
+<p-toast></p-toast>
+<p-confirmDialog acceptIcon="pi pi-check" rejectIcon="pi pi-times"></p-confirmDialog>
+
+<div class="p-6">
+    <div class="mb-6">
+        <h1 class="text-3xl font-semibold text-surface-900 dark:text-surface-0" translate>menu.adminAgents</h1>
+    </div>
+
+    @if (joinToken()) {
+        <div class="mb-4 p-4 rounded-lg border border-surface-200 dark:border-surface-700 bg-surface-50 dark:bg-surface-800">
+            <div class="flex items-center justify-between gap-4">
+                <div class="min-w-0">
+                    <p class="text-sm font-medium text-surface-700 dark:text-surface-300 mb-1">Join token</p>
+                    <code class="font-mono text-sm text-surface-900 dark:text-surface-100 break-all">{{ joinToken() }}</code>
+                </div>
+                <p-button
+                    [icon]="tokenCopied() ? 'pi pi-check' : 'pi pi-copy'"
+                    [severity]="tokenCopied() ? 'success' : 'secondary'"
+                    [outlined]="true"
+                    size="small"
+                    [pTooltip]="(tokenCopied() ? 'admin.agents.copied' : 'admin.agents.copyToken') | translate"
+                    (onClick)="copyToken()"
+                ></p-button>
+            </div>
+        </div>
+    }
+
+    <p-card>
+        @if (loading()) {
+            <p-skeleton height="10rem" styleClass="w-full"></p-skeleton>
+        } @else {
+            <p-table [value]="agents()" [tableStyle]="{'min-width': '50rem'}" styleClass="p-datatable-sm">
+                <ng-template #header>
+                    <tr>
+                        <th>{{ 'common.name' | translate }}</th>
+                        <th>{{ 'admin.agents.dockerHost' | translate }}</th>
+                        <th>{{ 'common.status' | translate }}</th>
+                        <th>{{ 'admin.agents.capacity' | translate }}</th>
+                        <th class="w-28"></th>
+                    </tr>
+                </ng-template>
+                <ng-template #body let-a>
+                    <tr>
+                        <td class="font-medium">{{ a.display_name }}</td>
+                        <td class="font-mono text-xs text-surface-500">{{ a.docker_host || a.api_url }}</td>
+                        <td>
+                            @if (!a.enabled) {
+                                <p-tag [value]="'common.disabled' | translate" severity="secondary"></p-tag>
+                            } @else if (a.healthy === true) {
+                                <p-tag [value]="'admin.agents.healthy' | translate" severity="success"></p-tag>
+                            } @else if (a.healthy === false) {
+                                <p-tag [value]="'admin.agents.unreachable' | translate" severity="danger"></p-tag>
+                            } @else {
+                                <p-tag [value]="'admin.agents.na' | translate" severity="secondary"></p-tag>
+                            }
+                        </td>
+                        <td class="text-sm text-surface-500">{{ a.total_cores }} {{ 'admin.tides.cpu' | translate }} / {{ a.total_memory }} {{ 'admin.tides.ram' | translate }}</td>
+                        <td>
+                            <div class="flex gap-1 justify-end">
+                                <p-button icon="pi pi-pencil" severity="secondary" [outlined]="true" size="small" [pTooltip]="'common.edit' | translate" (onClick)="openEdit(a)"></p-button>
+                                <p-button icon="pi pi-trash" severity="danger" [outlined]="true" size="small" [pTooltip]="'common.delete' | translate" (onClick)="confirmDelete(a)"></p-button>
+                            </div>
+                        </td>
+                    </tr>
+                </ng-template>
+                <ng-template #emptymessage>
+                    <tr><td colspan="5" class="text-center text-surface-500 py-8">{{ 'admin.agents.empty' | translate }}</td></tr>
+                </ng-template>
+            </p-table>
+        }
+    </p-card>
+</div>
+
+<!-- Edit dialog -->
+<p-dialog [visible]="showDialog()" (visibleChange)="showDialog.set($event)" [header]="'admin.agents.editTitle' | translate" [modal]="true" [style]="{width: '520px'}" [draggable]="false">
+    <div class="flex flex-col gap-4 py-2">
+        <div>
+            <label class="block text-sm font-medium mb-1">{{ 'common.name' | translate }} *</label>
+            <input pInputText [ngModel]="editingAgent().display_name" (ngModelChange)="patchAgent('display_name', $event)" class="w-full" [placeholder]="'admin.agents.namePlaceholder' | translate" />
+        </div>
+        <div>
+            <p class="text-xs font-medium text-surface-500 mb-1">{{ 'admin.agents.apiUrl' | translate }}</p>
+            <p class="text-sm font-mono">{{ editingAgent().api_url || '—' }}</p>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+            <div>
+                <p class="text-xs font-medium text-surface-500 mb-1">{{ 'admin.agents.totalCpu' | translate }}</p>
+                <p class="text-sm">{{ editingAgent().total_cores ?? '—' }}</p>
+            </div>
+            <div>
+                <p class="text-xs font-medium text-surface-500 mb-1">{{ 'admin.agents.totalRam' | translate }}</p>
+                <p class="text-sm">{{ editingAgent().total_memory ?? '—' }}</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-2">
+            <p-checkbox [ngModel]="editingAgent().enabled" (ngModelChange)="patchAgent('enabled', $event)" [binary]="true" inputId="enabled"></p-checkbox>
+            <label for="enabled" class="text-sm">{{ 'admin.common.enabled' | translate }}</label>
+        </div>
+        <div>
+            <label class="block text-sm font-medium mb-1">{{ 'admin.agents.pruneImages' | translate }}</label>
+            <p-select
+                [ngModel]="editingAgent().prune_mode ?? 'off'"
+                (ngModelChange)="patchAgent('prune_mode', $event)"
+                [options]="pruneOptions"
+                optionLabel="label"
+                optionValue="value"
+                appendTo="body"
+                styleClass="w-full"
+            ></p-select>
+        </div>
+
+        <div class="border border-surface-200 dark:border-surface-700 rounded-lg p-3">
+            <div class="flex items-center justify-between mb-2">
+                <span class="text-sm font-medium">{{ 'admin.agents.testConnection' | translate }}</span>
+                <p-button [label]="'admin.agents.test' | translate" icon="pi pi-wifi" size="small" severity="secondary" [loading]="testing()" (onClick)="testConnection()"></p-button>
+            </div>
+            @if (testResult(); as result) {
+                <div [class]="result.success ? 'text-green-600 text-sm' : 'text-red-500 text-sm'">
+                    <i [class]="result.success ? 'pi pi-check mr-1' : 'pi pi-times mr-1'"></i>
+                    {{ result.message }}
+                </div>
+            }
+        </div>
+    </div>
+
+    <ng-template #footer>
+        <p-button [label]="'common.cancel' | translate" icon="pi pi-times" severity="secondary" (onClick)="showDialog.set(false)"></p-button>
+        <p-button [label]="'common.save' | translate" icon="pi pi-check" [loading]="saving()" (onClick)="save()"></p-button>
+    </ng-template>
+</p-dialog>

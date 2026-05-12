@@ -1,0 +1,382 @@
+<div class="card">
+    <h2>{{ 'authProviders.title' | translate }}</h2>
+    <p class="text-muted-color">{{ 'authProviders.description' | translate }}</p>
+
+    <div class="mb-4">
+        <p-button label="{{ 'authProviders.create' | translate }}" icon="pi pi-plus"
+            (onClick)="createMenu.toggle($event)" severity="primary">
+        </p-button>
+        <p-menu #createMenu [model]="createProviderMenuItems" [popup]="true"></p-menu>
+    </div>
+
+    <p-table #dt [value]="providers()" [lazy]="true" (onLazyLoad)="onLazyLoad($event)" [loading]="loading()"
+        [paginator]="true" [rows]="50" [totalRecords]="totalRecords()" [rowsPerPageOptions]="[10, 25, 50, 100, 200]"
+        [showCurrentPageReport]="true" [currentPageReportTemplate]="'currentPageReportTemplate' | translate"
+        [filterDelay]="300" sortField="domain" [sortOrder]="1" styleClass="p-datatable-striped">
+
+        <ng-template #header>
+            <tr>
+                <th pSortableColumn="name" [style]="{ 'min-width': '200px' }">
+                    {{ 'common.name' | translate }}
+                    <p-sortIcon field="name" />
+                    <p-columnFilter type="text" field="name" display="menu" matchMode="contains" [showMatchModes]="true"
+                        [showOperator]="true" [showAddButton]="true" />
+                </th>
+                <th pSortableColumn="type" [style]="{ 'min-width': '150px' }">
+                    {{ 'common.type' | translate }}
+                    <p-sortIcon field="type" />
+                    <p-columnFilter field="type" matchMode="equals" display="menu" operator="or"
+                        [showMatchModes]="false" [showOperator]="false" [showAddButton]="false">
+                        <ng-template #filter let-value let-filter="filterCallback">
+                            <p-multiselect [ngModel]="value" [options]="providerTypes" [filter]="true"
+                                (ngModelChange)="filter($event)" class="w-full">
+                            </p-multiselect>
+                        </ng-template>
+                    </p-columnFilter>
+                </th>
+                <th pSortableColumn="priority" [style]="{ 'min-width': '100px' }">
+                    {{ 'authProviders.priority' | translate }}
+                    <p-sortIcon field="priority" />
+                </th>
+                <th pSortableColumn="enabled" [style]="{ 'min-width': '100px' }">
+                    {{ 'common.status' | translate }}
+                    <p-sortIcon field="enabled" />
+                </th>
+                <th [style]="{ 'min-width': '200px' }">{{ 'common.actions' | translate }}</th>
+            </tr>
+        </ng-template>
+
+        <ng-template #body let-provider>
+            <tr>
+                <td>{{ provider.name }}</td>
+                <td>
+                    <span class="inline-flex items-center gap-2">
+                        @if (provider.type === 'local') {
+                            <i class="pi pi-user"></i>
+                        } @else if (provider.type === 'ldap') {
+                            <i class="pi pi-shield"></i>
+                        } @else if (provider.type === 'azure-ad') {
+                            <i class="pi pi-microsoft"></i>
+                        } @else if (provider.type === 'oidc') {
+                            <i class="pi pi-id-card"></i>
+                        }
+                        {{ getProviderTypeLabel(provider.type) }}
+                    </span>
+                </td>
+                <td>{{ provider.priority }}</td>
+                <td>
+                    <p-tag [value]="provider.enabled ? ('common.enabled' | translate) : ('common.disabled' | translate)"
+                        [severity]="provider.enabled ? 'success' : 'secondary'">
+                    </p-tag>
+                </td>
+                <td>
+                    <div class="flex gap-2">
+                        <p-button icon="pi pi-pencil" [rounded]="true" [text]="true" severity="info"
+                            (onClick)="showEditDialog(provider)" [disabled]="provider.type === 'local'">
+                        </p-button>
+                        <p-button icon="pi pi-trash" [rounded]="true" [text]="true" severity="danger"
+                            (onClick)="deleteProvider(provider)" [disabled]="provider.type === 'local'">
+                        </p-button>
+                    </div>
+                </td>
+            </tr>
+        </ng-template>
+
+        <ng-template #emptymessage>
+            <tr>
+                <td colspan="5" class="text-center">
+                    {{ 'authProviders.noProviders' | translate }}
+                </td>
+            </tr>
+        </ng-template>
+    </p-table>
+</div>
+
+<p-dialog
+    [visible]="displayDialog()"
+    (visibleChange)="displayDialog.set($event)"
+    [header]="isNewProvider() ? ('authProviders.create' | translate) : ('authProviders.edit' | translate)"
+    [modal]="true"
+    [style]="{width: '600px'}"
+    [closable]="true">
+
+    <form [formGroup]="form" class="flex flex-col gap-5">
+        <div class="flex flex-col gap-2">
+            <label for="name" class="font-semibold block text-surface-700 dark:text-surface-200">
+                {{ 'common.name' | translate }} *
+            </label>
+            <input pInputText id="name" formControlName="name" class="w-full" placeholder="e.g., Company LDAP" />
+        </div>
+
+        @if (computedSlug()) {
+        <div class="flex flex-col gap-2">
+            <label class="font-semibold block text-surface-700 dark:text-surface-200">
+                {{ 'authProviders.slug' | translate }}
+            </label>
+            <input pInputText [value]="computedSlug()" class="w-full" [readonly]="true" />
+            <small class="block mt-2 text-surface-600 dark:text-surface-400">
+                {{ 'authProviders.slugDescription' | translate }}
+            </small>
+        </div>
+        }
+
+        @if (currentType() === 'local' || currentType() === 'ldap') {
+        <div class="flex flex-col gap-2">
+            <label for="priority" class="font-semibold block text-surface-700 dark:text-surface-200">
+                {{ 'authProviders.priority' | translate }}
+            </label>
+            <p-inputNumber id="priority" formControlName="priority" class="w-full" [showButtons]="true" [min]="0">
+            </p-inputNumber>
+            <small class="block mt-2 text-surface-600 dark:text-surface-400">
+                {{ 'authProviders.priorityHint' | translate }}
+            </small>
+        </div>
+        }
+
+        <div class="flex items-center gap-2">
+            <p-toggleswitch id="enabled" formControlName="enabled"></p-toggleswitch>
+            <label for="enabled" class="font-semibold">{{ 'common.enabled' | translate }}</label>
+        </div>
+
+        @if (currentType() === 'ldap') {
+        <div class="border-t border-surface-200 dark:border-surface-700 pt-6">
+            <h4 class="font-semibold mb-4 text-surface-900 dark:text-surface-0">
+                {{ 'authProviders.ldapSettings' | translate }}
+            </h4>
+
+            <div class="mb-5">
+                <label class="font-semibold block text-surface-700 dark:text-surface-200">
+                    {{ 'authProviders.ldapServers' | translate }} *
+                </label>
+                <div formArrayName="ldapServers">
+                    @for (ctrl of ldapServers.controls; track $index; let i = $index) {
+                    <div class="flex gap-2 mb-2">
+                        <input pInputText [formControlName]="i" class="flex-1"
+                            placeholder="ldap://ldap.example.com:389 or ldaps://ldap.example.com:636" />
+                        @if (ldapServers.length > 1) {
+                        <p-button icon="pi pi-trash" [rounded]="true" [text]="true" severity="danger"
+                            (onClick)="removeLdapServer(i)">
+                        </p-button>
+                        }
+                    </div>
+                    }
+                </div>
+                <p-button label="{{ 'authProviders.addServer' | translate }}" icon="pi pi-plus" [text]="true"
+                    size="small" (onClick)="addLdapServer()">
+                </p-button>
+                <small class="block mt-2 text-surface-600 dark:text-surface-400">
+                    {{ 'authProviders.ldapServersDescription' | translate }}
+                </small>
+            </div>
+
+            <div class="mb-5">
+                <label for="ldapBindDn" class="font-semibold block text-surface-700 dark:text-surface-200">
+                    {{ 'authProviders.ldapBindDn' | translate }}
+                </label>
+                <input pInputText id="ldapBindDn" formControlName="ldapBindDN" class="w-full"
+                    placeholder="cn=admin,dc=example,dc=com" />
+                <small class="block mt-2 text-surface-600 dark:text-surface-400">
+                    {{ 'authProviders.ldapBindDnDescription' | translate }}
+                </small>
+            </div>
+
+            <div class="mb-5">
+                <label for="ldapBindCredentials"
+                    class="font-semibold mb-3 block text-surface-700 dark:text-surface-200">
+                    {{ 'authProviders.ldapBindPassword' | translate }}
+                </label>
+                <p-password id="ldapBindCredentials" formControlName="ldapBindCredentials"
+                    [toggleMask]="true" [feedback]="false" [fluid]="true" placeholder="********">
+                </p-password>
+                <small class="block mt-2 text-surface-600 dark:text-surface-400">
+                    {{ 'authProviders.ldapBindPasswordDescription' | translate }}
+                </small>
+            </div>
+
+            <div class="mb-5">
+                <label for="ldapSearchBase" class="font-semibold block text-surface-700 dark:text-surface-200">
+                    {{ 'authProviders.ldapSearchBase' | translate }} *
+                </label>
+                <input pInputText id="ldapSearchBase" formControlName="ldapSearchBase" class="w-full"
+                    placeholder="ou=users,dc=example,dc=com" />
+                <small class="block mt-2 text-surface-600 dark:text-surface-400">
+                    {{ 'authProviders.ldapSearchBaseDescription' | translate }}
+                </small>
+            </div>
+
+            <div class="mb-5">
+                <label for="ldapSearchFilter" class="font-semibold block text-surface-700 dark:text-surface-200">
+                    {{ 'authProviders.ldapSearchFilter' | translate }} *
+                </label>
+                <input pInputText id="ldapSearchFilter" formControlName="ldapSearchFilter" class="w-full"
+                    placeholder="(uid=\{\{username\}\})" />
+                <small class="block mt-2 text-surface-600 dark:text-surface-400">
+                    {{ 'authProviders.ldapSearchFilterDescription' | translate }}
+                </small>
+            </div>
+
+            <div class="mb-5">
+                <label for="ldapUsernameField" class="font-semibold block text-surface-700 dark:text-surface-200">
+                    {{ 'authProviders.ldapUsernameField' | translate }}
+                </label>
+                <input pInputText id="ldapUsernameField" formControlName="ldapUsernameField" class="w-full"
+                    placeholder="uid" />
+                <small class="block mt-2 text-surface-600 dark:text-surface-400">
+                    {{ 'authProviders.ldapUsernameFieldDescription' | translate }}
+                </small>
+            </div>
+
+            <div class="mb-5">
+                <label for="ldapEmailField" class="font-semibold block text-surface-700 dark:text-surface-200">
+                    {{ 'authProviders.ldapEmailField' | translate }}
+                </label>
+                <input pInputText id="ldapEmailField" formControlName="ldapEmailField" class="w-full"
+                    placeholder="mail" />
+                <small class="block mt-2 text-surface-600 dark:text-surface-400">
+                    {{ 'authProviders.ldapEmailFieldDescription' | translate }}
+                </small>
+            </div>
+
+            <div class="mb-5 flex items-center gap-2">
+                <p-toggleswitch id="ldapTlsRejectUnauthorized"
+                    formControlName="ldapTlsRejectUnauthorized">
+                </p-toggleswitch>
+                <label for="ldapTlsRejectUnauthorized" class="font-semibold">
+                    {{ 'authProviders.ldapTlsRejectUnauthorized' | translate }}
+                </label>
+            </div>
+            <small class="block ml-12 mb-5 text-surface-600 dark:text-surface-400">
+                {{ 'authProviders.ldapTlsRejectUnauthorizedDescription' | translate }}
+            </small>
+
+            @if (tlsRejectUnauthorized()) {
+            <div class="mb-5">
+                <label for="ldapTlsCaCert" class="font-semibold block text-surface-700 dark:text-surface-200">
+                    {{ 'authProviders.ldapTlsCaCert' | translate }}
+                </label>
+                <textarea pInputText id="ldapTlsCaCert" formControlName="ldapTlsCaCert" class="w-full" [rows]="6"
+                    placeholder="-----BEGIN CERTIFICATE-----&#10;...&#10;-----END CERTIFICATE-----"></textarea>
+                <small class="block mt-2 text-surface-600 dark:text-surface-400">
+                    {{ 'authProviders.ldapTlsCaCertDescription' | translate }}
+                </small>
+            </div>
+            }
+        </div>
+        }
+
+        @if (currentType() === 'oidc') {
+        <div class="border-t border-surface-200 dark:border-surface-700 pt-6">
+            <h4 class="font-semibold mb-4 text-surface-900 dark:text-surface-0">
+                {{ 'authProviders.oidcSettings' | translate }}
+            </h4>
+
+            <div class="mb-5">
+                <label for="oidcIssuerUrl" class="font-semibold block text-surface-700 dark:text-surface-200">
+                    {{ 'authProviders.oidcIssuerUrl' | translate }} *
+                </label>
+                <input pInputText id="oidcIssuerUrl" formControlName="oidcIssuerURL" class="w-full"
+                    placeholder="https://provider.com/auth/realms/myrealm" />
+                <small class="block mt-2 text-surface-600 dark:text-surface-400">
+                    {{ 'authProviders.oidcIssuerUrlDescription' | translate }}
+                </small>
+            </div>
+
+            <div class="mb-5">
+                <label for="oidcClientId" class="font-semibold block text-surface-700 dark:text-surface-200">
+                    {{ 'authProviders.oidcClientId' | translate }} *
+                </label>
+                <input pInputText id="oidcClientId" formControlName="oidcClientID" class="w-full"
+                    placeholder="your-client-id" />
+                <small class="block mt-2 text-surface-600 dark:text-surface-400">
+                    {{ 'authProviders.oidcClientIdDescription' | translate }}
+                </small>
+            </div>
+
+            <div class="mb-5">
+                <label for="oidcClientSecret" class="font-semibold block text-surface-700 dark:text-surface-200">
+                    {{ 'authProviders.oidcClientSecret' | translate }} *
+                </label>
+                <p-password id="oidcClientSecret" formControlName="oidcClientSecret"
+                    [toggleMask]="true" [feedback]="false" [fluid]="true" placeholder="********">
+                </p-password>
+                <small class="block mt-2 text-surface-600 dark:text-surface-400">
+                    {{ 'authProviders.oidcClientSecretDescription' | translate }}
+                </small>
+            </div>
+
+            <div class="mb-5">
+                <label for="oidcCallbackUrl" class="font-semibold block text-surface-700 dark:text-surface-200">
+                    {{ 'authProviders.oidcCallbackUrl' | translate }} *
+                </label>
+                <input pInputText id="oidcCallbackUrl" formControlName="oidcCallbackURL" class="w-full"
+                    [readonly]="true" />
+                <small class="block mt-2 text-surface-600 dark:text-surface-400">
+                    {{ 'authProviders.oidcCallbackUrlDescription' | translate }}
+                </small>
+            </div>
+        </div>
+        }
+
+        @if (currentType() === 'azure-ad') {
+        <div class="border-t border-surface-200 dark:border-surface-700 pt-6">
+            <h4 class="font-semibold mb-4 text-surface-900 dark:text-surface-0">
+                {{ 'authProviders.azureAdSettings' | translate }}
+            </h4>
+
+            <div class="mb-5">
+                <label for="azureTenantId" class="font-semibold block text-surface-700 dark:text-surface-200">
+                    {{ 'authProviders.azureTenantId' | translate }} *
+                </label>
+                <input pInputText id="azureTenantId" formControlName="azureTenantID" class="w-full"
+                    placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" />
+                <small class="block mt-2 text-surface-600 dark:text-surface-400">
+                    {{ 'authProviders.azureTenantIdDescription' | translate }}
+                </small>
+            </div>
+
+            <div class="mb-5">
+                <label for="azureClientId" class="font-semibold block text-surface-700 dark:text-surface-200">
+                    {{ 'authProviders.azureClientId' | translate }} *
+                </label>
+                <input pInputText id="azureClientId" formControlName="azureClientID" class="w-full"
+                    placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx" />
+                <small class="block mt-2 text-surface-600 dark:text-surface-400">
+                    {{ 'authProviders.azureClientIdDescription' | translate }}
+                </small>
+            </div>
+
+            <div class="mb-5">
+                <label for="azureClientSecret" class="font-semibold block text-surface-700 dark:text-surface-200">
+                    {{ 'authProviders.azureClientSecret' | translate }} *
+                </label>
+                <p-password id="azureClientSecret" formControlName="azureClientSecret"
+                    [toggleMask]="true" [feedback]="false" [fluid]="true" placeholder="********">
+                </p-password>
+                <small class="block mt-2 text-surface-600 dark:text-surface-400">
+                    {{ 'authProviders.azureClientSecretDescription' | translate }}
+                </small>
+            </div>
+
+            <div class="mb-5">
+                <label for="azureCallbackUrl" class="font-semibold block text-surface-700 dark:text-surface-200">
+                    {{ 'authProviders.azureCallbackUrl' | translate }} *
+                </label>
+                <input pInputText id="azureCallbackUrl" formControlName="azureCallbackURL" class="w-full" />
+                <small class="block mt-2 text-surface-600 dark:text-surface-400">
+                    {{ 'authProviders.azureCallbackUrlDescription' | translate }}
+                </small>
+            </div>
+        </div>
+        }
+    </form>
+
+    <ng-template #footer>
+        <p-button label="{{ 'common.cancel' | translate }}" icon="pi pi-times" [text]="true" (onClick)="hideDialog()">
+        </p-button>
+        <p-button label="{{ 'common.save' | translate }}" icon="pi pi-check" (onClick)="saveProvider()"
+            [loading]="loading()">
+        </p-button>
+    </ng-template>
+</p-dialog>
+
+<p-confirmDialog acceptIcon="pi pi-check" rejectIcon="pi pi-times"></p-confirmDialog>

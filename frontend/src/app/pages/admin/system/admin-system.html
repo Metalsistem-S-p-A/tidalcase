@@ -1,0 +1,57 @@
+<div class="p-6">
+    <div class="flex items-center justify-between mb-6">
+        <h1 class="text-3xl font-semibold text-surface-900 dark:text-surface-0" translate>menu.adminSystem</h1>
+        <p-button icon="pi pi-refresh" severity="secondary" [outlined]="true" (onClick)="load()"></p-button>
+    </div>
+
+    @if (loading()) {
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            @for (i of [1,2,3,4]; track i) {
+                <p-skeleton height="6rem" styleClass="w-full rounded-xl"></p-skeleton>
+            }
+        </div>
+    } @else if (info()) {
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- System -->
+            <p-card header="Sistema">
+                <div class="flex flex-col gap-2">
+                    <div class="flex justify-between">
+                        <span class="text-surface-500 text-sm">Hostname</span>
+                        <span class="font-mono text-sm">{{ info().system.hostname }}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-surface-500 text-sm">OS</span>
+                        <span class="font-mono text-sm">{{ info().system.os }}</span>
+                    </div>
+                </div>
+            </p-card>
+
+            <!-- Versions -->
+            <p-card header="Versioni">
+                <div class="flex flex-col gap-2">
+                    <div class="flex justify-between">
+                        <span class="text-surface-500 text-sm">Tidalcase</span>
+                        <span class="font-mono text-sm font-semibold text-primary">{{ info().version.tidalcase }}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-surface-500 text-sm">Python</span>
+                        <span class="font-mono text-sm">{{ info().version.python }}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-surface-500 text-sm">Docker</span>
+                        <span class="font-mono text-sm">{{ info().version.docker }}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span class="text-surface-500 text-sm">Nginx</span>
+                        <span class="font-mono text-sm">{{ info().version.nginx }}</span>
+                    </div>
+                </div>
+            </p-card>
+        </div>
+    } @else {
+        <div class="text-center text-surface-500 py-16">
+            <i class="pi pi-exclamation-circle text-4xl mb-3 block"></i>
+            <p>Impossibile recuperare le informazioni di sistema</p>
+        </div>
+    }
+</div>

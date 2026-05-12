@@ -1,0 +1,125 @@
+<div class="card">
+    <h2 class="mb-4">{{ 'users.title' | translate }}</h2>
+    <p class="text-surface-600 dark:text-surface-400 mb-6">{{ 'users.description' | translate }}</p>
+
+    <div class="mb-5">
+        <p-button [label]="'users.create' | translate" icon="pi pi-plus" (onClick)="showCreateDialog()"
+            severity="primary">
+        </p-button>
+    </div>
+
+    <p-table #dt [value]="users()" [loading]="loading()" [paginator]="true" [rows]="50"
+        [totalRecords]="totalRecords()" [rowsPerPageOptions]="[10, 25, 50, 100]"
+        [showCurrentPageReport]="true" [currentPageReportTemplate]="'currentPageReportTemplate' | translate"
+        sortField="username" [sortOrder]="1" styleClass="p-datatable-striped">
+
+        <ng-template #header>
+            <tr>
+                <th pSortableColumn="username" [style]="{ 'min-width': '150px' }">
+                    {{ 'auth.username' | translate }}
+                    <p-sortIcon field="username" />
+                </th>
+                <th [style]="{ 'min-width': '200px' }">{{ 'users.group' | translate }}</th>
+                <th [style]="{ 'min-width': '120px' }">{{ 'users.usertype' | translate }}</th>
+                <th [style]="{ 'min-width': '200px' }">{{ 'common.actions' | translate }}</th>
+            </tr>
+        </ng-template>
+
+        <ng-template #body let-user>
+            <tr>
+                <td>
+                    <div class="flex items-center gap-2">
+                        {{ user.username }}
+                        @if (user.protected) {
+                        <i class="pi pi-lock text-surface-400" [title]="'users.protected' | translate"></i>
+                        }
+                    </div>
+                </td>
+                <td>{{ getGroupNames(user) }}</td>
+                <td>
+                    <p-tag [value]="user.usertype"
+                        [severity]="user.usertype === 'Internal' ? 'success' : 'secondary'">
+                    </p-tag>
+                </td>
+                <td>
+                    <div class="flex gap-2">
+                        <p-button icon="pi pi-pencil" [rounded]="true" [text]="true" severity="info"
+                            (onClick)="showEditDialog(user)">
+                        </p-button>
+                        <p-button icon="pi pi-trash" [rounded]="true" [text]="true" severity="danger"
+                            [disabled]="user.protected" (onClick)="deleteUser(user)">
+                        </p-button>
+                    </div>
+                </td>
+            </tr>
+        </ng-template>
+
+        <ng-template #emptymessage>
+            <tr>
+                <td colspan="4" class="text-center">
+                    {{ 'users.noUsers' | translate }}
+                </td>
+            </tr>
+        </ng-template>
+    </p-table>
+</div>
+
+<p-dialog [visible]="displayDialog()" (visibleChange)="displayDialog.set($event)"
+    [header]="isNewUser() ? ('users.create' | translate) : ('users.edit' | translate)"
+    [modal]="true" [style]="{width: '480px'}" [closable]="true">
+
+    <form [formGroup]="form" class="flex flex-col gap-5 pt-2">
+
+        <div class="flex flex-col gap-2">
+            <label for="username" class="font-medium">{{ 'auth.username' | translate }} *</label>
+            <input pInputText id="username" formControlName="username" class="w-full"
+                placeholder="e.g. john.doe" />
+        </div>
+
+        @if (isNewUser()) {
+        <div class="flex flex-col gap-2">
+            <label for="password" class="font-medium">{{ 'auth.password' | translate }} *</label>
+            <p-password id="password" formControlName="password" [toggleMask]="true" [fluid]="true"
+                [feedback]="true">
+            </p-password>
+        </div>
+        }
+
+        <div class="flex flex-col gap-2">
+            <label for="groups" class="font-medium">{{ 'users.group' | translate }}</label>
+            <p-multiselect id="groups" formControlName="groups" [options]="groupOptions()"
+                optionLabel="label" optionValue="value" [fluid]="true"
+                [placeholder]="'users.selectGroups' | translate" appendTo="body">
+            </p-multiselect>
+        </div>
+
+        <div class="flex flex-col gap-2 mb-4">
+            <label for="preferred_language" class="font-medium" translate>language</label>
+            <p-select id="preferred_language" formControlName="preferred_language"
+                [options]="languages" optionLabel="label" optionValue="value"
+                [placeholder]="'language' | translate"
+                [fluid]="true" appendTo="body">
+            </p-select>
+        </div>
+
+        <div class="flex flex-col gap-2">
+            <label for="auto_start_tide_id" class="font-medium">{{ 'users.autoStartTide' | translate }}</label>
+            <p-select id="auto_start_tide_id" formControlName="auto_start_tide_id"
+                [options]="availableTides()" optionLabel="label" optionValue="value"
+                [showClear]="true" [placeholder]="'users.autoStartTideNone' | translate"
+                [fluid]="true" appendTo="body">
+            </p-select>
+        </div>
+
+    </form>
+
+    <ng-template #footer>
+        <p-button [label]="'common.cancel' | translate" icon="pi pi-times" [text]="true" (onClick)="hideDialog()">
+        </p-button>
+        <p-button [label]="'common.save' | translate" icon="pi pi-check" (onClick)="saveUser()"
+            [loading]="saving()">
+        </p-button>
+    </ng-template>
+</p-dialog>
+
+<p-confirmDialog acceptIcon="pi pi-check" rejectIcon="pi pi-times"></p-confirmDialog>

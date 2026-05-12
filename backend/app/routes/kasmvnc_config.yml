@@ -1,0 +1,19 @@
+network:
+  ssl:
+    pem_certificate: ${HOME}/.vnc/self.pem
+    pem_key: ${HOME}/.vnc/self.pem
+  udp:
+    public_ip: 127.0.0.1
+
+user_session:
+  session_type: "exclusive"
+  new_session_disconnects_existing_exclusive_session: true
+  idle_timeout: {idle_val}
+
+server:
+  auto_shutdown:
+    inactive_user_session_timeout: {idle_val}
+
+runtime_configuration:
+  allow_client_to_override_kasm_server_settings: false
+  allow_override_standard_vnc_server_settings: false

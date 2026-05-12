@@ -1,0 +1,15 @@
+import datetime
+import celery
+import app.models.tide
+import app.routes.tide
+
+@celery.shared_task
+def session_reaper_task():
+    now = datetime.datetime.now()
+    instances = app.models.tide.TideInstance.query.all()
+    for instance in instances:
+        tide = app.models.tide.Tide.query.get(instance.tide_id)
+        if tide and tide.session_time_limit and tide.session_time_limit > 0:
+            elapsed = (now - instance.created_at).total_seconds()
+            if elapsed >= tide.session_time_limit * 60:
+                app.routes.tide._destroy_instance(instance)

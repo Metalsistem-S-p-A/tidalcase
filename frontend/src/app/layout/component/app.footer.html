@@ -1,0 +1,18 @@
+<div class="layout-footer">
+    <div class="flex flex-col md:flex-row justify-between items-center gap-3 w-full">
+        <div class="flex items-center gap-2">
+            <span>{{ 'madeWith' | translate }}</span>
+            <a href="https://primeng.org" target="_blank" rel="noopener noreferrer"
+                class="text-primary font-bold hover:underline">PrimeNG</a>
+        </div>
+        <div class="flex items-center gap-3 text-sm text-surface-600 dark:text-surface-400">
+            <a [href]="githubUrl" target="_blank" rel="noopener noreferrer"
+                class="flex items-center gap-1 hover:text-primary transition-colors">
+                <i class="pi pi-github"></i>
+                <span>GitHub</span>
+            </a>
+            <span>•</span>
+            <span>MIT</span>
+        </div>
+    </div>
+</div>
