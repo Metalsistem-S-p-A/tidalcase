@@ -183,3 +183,10 @@ docker-compose.dev.yml
 **/credentials.txt
 backend/data/secret_key
 backend/data/join_token
+
+# Local tool state — never commit
+.claude/
+*.old
+TODO.md
+CLAUDE.md
+**/CLAUDE.md

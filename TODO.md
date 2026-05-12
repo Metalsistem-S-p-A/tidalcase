@@ -1,1 +1,0 @@
-docker exec tidalcase-postgres psql -U tidalcase -c "CREATE DATABASE authentik;"

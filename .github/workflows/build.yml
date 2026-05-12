@@ -22,15 +22,22 @@ jobs:
         include:
           - name: backend
             context: ./backend
+            dockerfile: ./backend/Dockerfile
           - name: frontend
             context: ./frontend
+            dockerfile: ./frontend/Dockerfile
           - name: guac
             context: ./guac
+            dockerfile: ./guac/Dockerfile
           - name: agent
             context: ./agent
+            dockerfile: ./agent/Dockerfile
           - name: agent-nginx
             context: ./agent
             dockerfile: ./agent/nginx.Dockerfile
+          - name: registry
+            context: ./registry
+            dockerfile: ./registry/Dockerfile
 
     steps:
       - name: Checkout
@@ -60,6 +67,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: ${{ matrix.context }}
+          file: ${{ matrix.dockerfile }}
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}

@@ -82,12 +82,14 @@ If you mirror Tidalcase images into your own registry, set:
 
 | Variable                      | Default |
 | ----------------------------- | ------- |
+| `TIDALCASE_BACKEND_IMAGE`     | `ghcr.io/mlongo-metalsistemspa/tidalcase-backend:latest` |
+| `TIDALCASE_FRONTEND_IMAGE`    | `ghcr.io/mlongo-metalsistemspa/tidalcase-frontend:latest` |
 | `TIDALCASE_AGENT_IMAGE`       | `ghcr.io/mlongo-metalsistemspa/tidalcase-agent:latest` |
 | `TIDALCASE_AGENT_NGINX_IMAGE` | `ghcr.io/mlongo-metalsistemspa/tidalcase-agent-nginx:latest` |
 | `TIDALCASE_REGISTRY_IMAGE`    | `ghcr.io/mlongo-metalsistemspa/tidalcase-registry:latest` |
 
-The backend and frontend images aren't parameterised — edit the `image:` line
-in `docker-compose.yml` directly if you mirror those too.
+The Celery worker and beat services reuse `TIDALCASE_BACKEND_IMAGE`, so one
+override is enough to redirect the whole manager stack.
 
 ## Admin panel
 
@@ -139,9 +141,15 @@ done
 Then in `.env`:
 
 ```env
+TIDALCASE_BACKEND_IMAGE=ghcr.io/<your-github-user>/tidalcase-backend:latest
+TIDALCASE_FRONTEND_IMAGE=ghcr.io/<your-github-user>/tidalcase-frontend:latest
 TIDALCASE_AGENT_IMAGE=ghcr.io/<your-github-user>/tidalcase-agent:latest
 TIDALCASE_AGENT_NGINX_IMAGE=ghcr.io/<your-github-user>/tidalcase-agent-nginx:latest
 TIDALCASE_REGISTRY_IMAGE=ghcr.io/<your-github-user>/tidalcase-registry:latest
 ```
 
-For backend and frontend, edit the `image:` lines in `docker-compose.yml`.
+If you fork the repo and enable the `.github/workflows/build.yml` workflow,
+GitHub Actions will automatically publish images to
+`ghcr.io/<your-github-owner>/tidalcase-<name>` on every push to `main`
+(and on every release tag). In that case the `.env` overrides above are all
+you need — no compose edits required.
