@@ -15,10 +15,6 @@ export const appRoutes: Routes = [
 
             // User-facing pages
             {
-                path: 'tides',
-                loadComponent: () => import('./pages/tides/tides').then(m => m.Tides)
-            },
-            {
                 path: 'profile',
                 loadComponent: () => import('./pages/profile/profile').then(m => m.ProfileComponent)
             },

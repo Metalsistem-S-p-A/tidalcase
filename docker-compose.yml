@@ -30,6 +30,7 @@ services:
       - --entrypoints.websecure.address=:443
       - --entrypoints.authentik.address=:9443
       - --entrypoints.registry.address=:5443
+      - --entrypoints.registry-ui.address=:6443
       - --entrypoints.web.http.redirections.entrypoint.to=websecure
       - --entrypoints.web.http.redirections.entrypoint.scheme=https
     ports:
@@ -37,6 +38,7 @@ services:
       - "443:443"
       - "9443:9443"
       - "5443:5443"
+      - "6443:6443"
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
       - /etc/tidalcase/certs:/certs:ro
@@ -193,6 +195,7 @@ services:
       REGISTRY_NAME: ${REGISTRY_NAME:-Tidalcase Registry}
       REGISTRY_IMAGE_PREFIX: ${REGISTRY_IMAGE_PREFIX:-}
       ICONS_DIR: /icons
+      REGISTRY_STORAGE_DELETE_ENABLED: "true"
     volumes:
       - registry_data:/var/lib/registry
       - /etc/tidalcase/registry/icons:/icons:ro
@@ -204,6 +207,32 @@ services:
       - traefik.http.routers.registry.entrypoints=registry
       - traefik.http.routers.registry.tls=true
       - traefik.http.services.registry.loadbalancer.server.port=5000
+
+  tidalcase-registry-ui:
+    profiles: [registry]
+    image: joxit/docker-registry-ui:latest
+    container_name: tidalcase-registry-ui
+    restart: unless-stopped
+    environment:
+      TZ: "Europe/Rome"
+      SINGLE_REGISTRY: "true"
+      REGISTRY_TITLE: ${REGISTRY_NAME:-Tidalcase Registry}
+      NGINX_PROXY_PASS_URL: http://tidalcase-registry:5000
+      DELETE_IMAGES: "true"
+      SHOW_CONTENT_DIGEST: "true"
+      SHOW_CATALOG_NB_TAGS: "true"
+      CATALOG_ELEMENTS_LIMIT: "1000"
+      TAGLIST_PAGE_SIZE: "100"
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.tidalcase-registry-ui.rule=Host(`${DOMAIN}`)
+      - traefik.http.routers.tidalcase-registry-ui.entrypoints=registry-ui
+      - traefik.http.routers.tidalcase-registry-ui.tls=true
+      - traefik.http.services.tidalcase-registry-ui.loadbalancer.server.port=80
+    depends_on:
+      - tidalcase-registry
+    networks:
+      - tidalcase-network
 
   tidalcase-agent:
     profiles: [agent]

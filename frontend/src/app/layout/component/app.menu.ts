@@ -31,7 +31,6 @@ export class AppMenu implements OnInit {
             label: this.translate.instant('menu.main'),
             items: [
                 { label: this.translate.instant('dashboard.title'), icon: 'pi pi-fw pi-home', routerLink: ['/'] },
-                { label: this.translate.instant('menu.tides'), icon: 'pi pi-fw pi-desktop', routerLink: ['/tides'] },
             ]
         });
 

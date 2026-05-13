@@ -63,6 +63,8 @@ def pull_image(image: str) -> None:
     print(f"[agent] Auto-pulling '{image}'...", flush=True)
     try:
         for event in docker.from_env().api.pull(image, stream=True, decode=True):
+            if event.get('error') or event.get('errorDetail'):
+                raise Exception(event.get('error') or str(event.get('errorDetail', {}).get('message', 'pull error')))
             status = event.get('status', '')
             layer_id = event.get('id', '')
             if layer_id and status in ('Pulling fs layer', 'Waiting'):
@@ -76,6 +78,10 @@ def pull_image(image: str) -> None:
                 "status": "pulling", "percent": percent,
                 "layers_done": done, "layers_total": total,
             }), ex=3600)
+        try:
+            docker.from_env().images.get(image)
+        except docker.errors.ImageNotFound:
+            raise Exception(f"pull reported success but image '{image}' not found locally")
         r.set(key, json.dumps({"status": "done", "percent": 100}), ex=300)
         print(f"[agent] '{image}' pulled OK", flush=True)
     except Exception as e:
