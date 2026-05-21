@@ -468,8 +468,13 @@
     "instances": {
       "user": "Utente",
       "agent": "Agente",
+      "status": "Stato",
       "startedAt": "Avviata il",
       "terminate": "Termina",
+      "pause": "Pausa",
+      "resume": "Riprendi",
+      "view": "Visualizza (sola lettura)",
+      "pauseError": "Impossibile cambiare stato dell'istanza.",
       "empty": "Nessuna istanza in esecuzione",
       "confirmDelete": "Terminare l'istanza di \"{{tide}}\" (utente: {{user}})?",
       "confirmDeleteHeader": "Conferma",

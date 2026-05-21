@@ -96,6 +96,12 @@ class AgentHTTPClient:
     def remove_container(self, name: str) -> None:
         self._delete(f'/container/{name}')
 
+    def pause_container(self, name: str) -> None:
+        self._post(f'/container/{name}/pause')
+
+    def unpause_container(self, name: str) -> None:
+        self._post(f'/container/{name}/unpause')
+
     def get_container_ip(self, name: str, network: str) -> typing.Optional[str]:
         data = self._get(f'/container/{name}/ip', params={'network': network})
         return data.get('ip')

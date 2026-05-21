@@ -32,6 +32,14 @@ export class AdminTideService {
         return this.http.delete<any>('/api/admin/instance', { body: { id } });
     }
 
+    pauseInstance(id: string): Observable<{ success: boolean; error?: string }> {
+        return this.http.post<any>(`/api/admin/instance/${id}/pause`, {});
+    }
+
+    unpauseInstance(id: string): Observable<{ success: boolean; error?: string }> {
+        return this.http.post<any>(`/api/admin/instance/${id}/unpause`, {});
+    }
+
     // Admin: Docker networks list
     getNetworks(): Observable<{ success: boolean; networks: string[] }> {
         return this.http.get<any>('/api/admin/networks');

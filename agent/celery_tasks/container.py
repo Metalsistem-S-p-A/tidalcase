@@ -142,6 +142,8 @@ def check_containers() -> None:
         try:
             container = docker_client.containers.get(container_name)
             container.reload()
+            if container.status == 'paused':
+                continue  # admin-paused — skip deadline and exit checks
             if container.status not in ('running', 'restarting', 'created'):
                 oom = container.attrs.get('State', {}).get('OOMKilled', False)
                 exit_code = container.attrs.get('State', {}).get('ExitCode', '?')

@@ -48,5 +48,6 @@ class TideInstance(app.utils.extensions.db.Model):
     vnc_password = app.utils.extensions.db.Column(app.utils.extensions.db.String(32), nullable=True)
     direct_url = app.utils.extensions.db.Column(app.utils.extensions.db.String(512), nullable=True)
     guac_token = app.utils.extensions.db.Column(app.utils.extensions.db.Text, nullable=True)
+    paused = app.utils.extensions.db.Column(app.utils.extensions.db.Boolean, nullable=False, default=False, server_default='false')
     created_at = app.utils.extensions.db.Column(app.utils.extensions.db.DateTime, server_default=sqlalchemy.text("CURRENT_TIMESTAMP"))
     updated_at = app.utils.extensions.db.Column(app.utils.extensions.db.DateTime, server_default=sqlalchemy.text("CURRENT_TIMESTAMP"), onupdate=datetime.datetime.now())

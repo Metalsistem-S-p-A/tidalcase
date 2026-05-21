@@ -468,8 +468,13 @@
     "instances": {
       "user": "User",
       "agent": "Agent",
+      "status": "Status",
       "startedAt": "Started at",
       "terminate": "Terminate",
+      "pause": "Pause",
+      "resume": "Resume",
+      "view": "View (read-only)",
+      "pauseError": "Failed to change instance state.",
       "empty": "No running instances",
       "confirmDelete": "Terminate instance of \"{{tide}}\" (user: {{user}})?",
       "confirmDeleteHeader": "Confirm",

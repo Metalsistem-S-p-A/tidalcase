@@ -123,12 +123,15 @@ def api_admin_instances():
 
         response["instances"].append({
             "id": instance.id,
+            "paused": bool(instance.paused),
+            "direct_url": instance.direct_url,
             "created_at": instance.created_at.isoformat() if instance.created_at else None,
             "updated_at": instance.updated_at.isoformat() if instance.updated_at else None,
             "tide": {
                 "id": tide.id,
                 "display_name": tide.display_name,
                 "description": tide.description,
+                "tide_type": tide.tide_type,
                 "container_docker_image": tide.container_docker_image,
                 "container_docker_registry": tide.container_docker_registry,
                 "container_cores": tide.container_cores,
@@ -328,6 +331,54 @@ def api_admin_delete_tide():
     app.utils.extensions.db.session.commit()
 
     return flask.jsonify({"success": True})
+
+@admin_bp.post('/instance/<string:instance_id>/pause')
+@app.utils.jwt_validator.jwt_required
+def api_admin_pause_instance(instance_id):
+    if not app.utils.permissions.Permissions.check_permission(flask.g.current_user.id, app.utils.permissions.Permissions.EDIT_INSTANCES):
+        return flask.jsonify({"success": False, "error": "Unauthorized"}), 403
+
+    instance = app.models.tide.TideInstance.query.filter_by(id=instance_id).first()
+    if not instance:
+        return flask.jsonify({"success": False, "error": "Instance not found"}), 404
+
+    agent = app.models.agent.Agent.query.filter_by(id=instance.agent_id).first()
+    if agent:
+        client = app.utils.docker.get_agent_client(agent)
+        if client:
+            try:
+                client.pause_container(f'tidalcase-{instance.id}')
+            except app.utils.agent_client.AgentError as e:
+                return flask.jsonify({"success": False, "error": str(e)}), 502
+
+    instance.paused = True
+    app.utils.extensions.db.session.commit()
+    return flask.jsonify({"success": True})
+
+
+@admin_bp.post('/instance/<string:instance_id>/unpause')
+@app.utils.jwt_validator.jwt_required
+def api_admin_unpause_instance(instance_id):
+    if not app.utils.permissions.Permissions.check_permission(flask.g.current_user.id, app.utils.permissions.Permissions.EDIT_INSTANCES):
+        return flask.jsonify({"success": False, "error": "Unauthorized"}), 403
+
+    instance = app.models.tide.TideInstance.query.filter_by(id=instance_id).first()
+    if not instance:
+        return flask.jsonify({"success": False, "error": "Instance not found"}), 404
+
+    agent = app.models.agent.Agent.query.filter_by(id=instance.agent_id).first()
+    if agent:
+        client = app.utils.docker.get_agent_client(agent)
+        if client:
+            try:
+                client.unpause_container(f'tidalcase-{instance.id}')
+            except app.utils.agent_client.AgentError as e:
+                return flask.jsonify({"success": False, "error": str(e)}), 502
+
+    instance.paused = False
+    app.utils.extensions.db.session.commit()
+    return flask.jsonify({"success": True})
+
 
 @admin_bp.delete('/instance')
 @app.utils.jwt_validator.jwt_required

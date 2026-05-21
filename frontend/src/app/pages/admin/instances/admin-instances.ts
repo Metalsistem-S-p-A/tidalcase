@@ -28,8 +28,9 @@ export class AdminInstances implements OnInit {
     private translate = inject(TranslateService);
 
     loading = signal(true);
-    instances = signal<TideInstance[]>([]);
+    instances = signal<any[]>([]);
     deletingId: string | null = null;
+    pausingId: string | null = null;
 
     ngOnInit() { this.load(); }
 
@@ -63,5 +64,37 @@ export class AdminInstances implements OnInit {
                 this.messageService.add({ severity: 'error', summary: this.translate.instant('common.error'), detail: this.translate.instant('admin.instances.terminateError') });
             }
         });
+    }
+
+    togglePause(instance: any) {
+        this.pausingId = instance.id;
+        const obs = instance.paused
+            ? this.service.unpauseInstance(instance.id)
+            : this.service.pauseInstance(instance.id);
+
+        obs.subscribe({
+            next: () => {
+                this.pausingId = null;
+                this.instances.update(list =>
+                    list.map(i => i.id === instance.id ? { ...i, paused: !instance.paused } : i)
+                );
+            },
+            error: () => {
+                this.pausingId = null;
+                this.messageService.add({ severity: 'error', summary: this.translate.instant('common.error'), detail: this.translate.instant('admin.instances.pauseError') });
+            }
+        });
+    }
+
+    viewInstance(instance: any) {
+        const url = instance.direct_url;
+        if (!url) return;
+        const viewUrl = url.includes('?') ? `${url}&view_only=true` : `${url}?view_only=true`;
+        window.open(viewUrl, '_blank', 'noopener,noreferrer');
+    }
+
+    isVncSession(instance: any): boolean {
+        const t = instance.tide?.tide_type;
+        return t === 'container' || t === 'vnc';
     }
 }

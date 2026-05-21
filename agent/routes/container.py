@@ -320,6 +320,28 @@ def container_exists(name):
     
     return flask.jsonify({"ok": True})
 
+@bp.post('/container/<name>/pause')
+def container_pause(name):
+    try:
+        docker.from_env().containers.get(name).pause()
+    except docker.errors.NotFound:
+        return flask.jsonify({"ok": False, "error": "not found"}), 404
+    except Exception as e:
+        return flask.jsonify({"ok": False, "error": str(e)}), 500
+    return flask.jsonify({"ok": True})
+
+
+@bp.post('/container/<name>/unpause')
+def container_unpause(name):
+    try:
+        docker.from_env().containers.get(name).unpause()
+    except docker.errors.NotFound:
+        return flask.jsonify({"ok": False, "error": "not found"}), 404
+    except Exception as e:
+        return flask.jsonify({"ok": False, "error": str(e)}), 500
+    return flask.jsonify({"ok": True})
+
+
 @bp.delete('/container/<name>')
 def container_remove(name):
     try:
