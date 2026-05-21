@@ -63,11 +63,17 @@ export class UsersComponent implements OnInit {
 
     readonly form = this.fb.group({
         username: ['', Validators.required],
+        usertype: ['Internal'],
         password: [''],
         groups: [[] as string[]],
         auto_start_tide_id: [null as string | null],
         preferred_language: ''
     });
+
+    readonly usertypeOptions = [
+        { label: 'Internal', value: 'Internal' },
+        { label: 'External', value: 'External' },
+    ];
 
     readonly languages = [
         { label: 'System', value: 'system' },
@@ -125,11 +131,25 @@ export class UsersComponent implements OnInit {
     showCreateDialog(): void {
         this.isNewUser.set(true);
         this.selectedUser.set(null);
-        this.form.reset({ username: '', password: '', groups: [], auto_start_tide_id: null, preferred_language: 'system' });
+        this.form.reset({ username: '', usertype: 'Internal', password: '', groups: [], auto_start_tide_id: null, preferred_language: 'system' });
         this.form.controls.username.enable();
         this.form.controls.password.setValidators(Validators.required);
         this.form.controls.password.updateValueAndValidity();
         this.displayDialog.set(true);
+    }
+
+    get isExternalUser(): boolean {
+        return this.form.controls.usertype.value === 'External';
+    }
+
+    onUsertypeChange(): void {
+        if (this.isExternalUser) {
+            this.form.controls.password.clearValidators();
+            this.form.controls.password.setValue('');
+        } else {
+            this.form.controls.password.setValidators(Validators.required);
+        }
+        this.form.controls.password.updateValueAndValidity();
     }
 
     showEditDialog(user: TidalcaseUser): void {
@@ -167,6 +187,7 @@ export class UsersComponent implements OnInit {
             ? this.adminUserService.createUser({
                 username: v.username!,
                 password: v.password!,
+                usertype: v.usertype ?? 'Internal',
                 groups: v.groups ?? [],
                 auto_start_tide_id: autoStartTideId,
                 preferred_language: v.preferred_language!

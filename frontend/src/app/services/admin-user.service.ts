@@ -25,7 +25,7 @@ export class AdminUserService {
         return this.http.get<{ data: TidalcaseUser[]; totalRecords: number }>(this.LIST_URL);
     }
 
-    createUser(payload: { username: string; password: string; groups: string[]; auto_start_tide_id?: string | null, preferred_language: string}): Observable<{ success: boolean }> {
+    createUser(payload: { username: string; password: string; usertype: string; groups: string[]; auto_start_tide_id?: string | null, preferred_language: string}): Observable<{ success: boolean }> {
         return this.http.post<{ success: boolean }>(this.ITEM_URL, { id: null, ...payload });
     }
 

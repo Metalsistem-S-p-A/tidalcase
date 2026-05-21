@@ -197,6 +197,7 @@
     "autoStartTide": "Tide avvio automatico (override)",
     "autoStartTideNone": "Eredita dal gruppo",
     "protected": "Protetto",
+    "externalNote": "Il nome utente deve corrispondere esattamente a quello restituito dal provider esterno (LDAP, OIDC…). Non è necessaria alcuna password.",
     "confirmDelete": "Sei sicuro di voler eliminare questo utente?",
     "success": {
       "created": "Utente creato con successo",

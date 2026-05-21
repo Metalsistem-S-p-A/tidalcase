@@ -1,6 +1,8 @@
 import json
 import platform
+import random
 import re
+import string
 import sys
 import os
 import datetime
@@ -391,12 +393,19 @@ def api_admin_edit_user():
     user.preferred_language = preferred_language
 
     if create_new:
-        if not flask.request.json.get('password'):
-            return flask.jsonify({"success": False, "error": "Password is required"}), 400
-        user.password = app.utils.extensions.bcrypt.generate_password_hash(flask.request.json.get('password')).decode('utf-8')
-        user.auth_token =  app.routes.auth.generate_auth_token()
+        usertype = flask.request.json.get('usertype', 'Internal')
+        if usertype not in ('Internal', 'External'):
+            usertype = 'Internal'
+        user.usertype = usertype
 
-    if create_new:
+        if usertype == 'External':
+            random_pw = ''.join(random.choice(string.ascii_letters + string.digits) for _ in range(32))
+            user.password = app.utils.extensions.bcrypt.generate_password_hash(random_pw).decode('utf-8')
+        else:
+            if not flask.request.json.get('password'):
+                return flask.jsonify({"success": False, "error": "Password is required"}), 400
+            user.password = app.utils.extensions.bcrypt.generate_password_hash(flask.request.json.get('password')).decode('utf-8')
+        user.auth_token = app.routes.auth.generate_auth_token()
         app.utils.extensions.db.session.add(user)
 
     app.utils.extensions.db.session.commit()

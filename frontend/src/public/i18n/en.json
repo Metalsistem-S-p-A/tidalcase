@@ -197,6 +197,7 @@
     "autoStartTide": "Auto-start tide (override)",
     "autoStartTideNone": "Inherit from group",
     "protected": "Protected",
+    "externalNote": "The username must match exactly what the external provider (LDAP, OIDC…) returns. No password is needed.",
     "confirmDelete": "Are you sure you want to delete this user?",
     "success": {
       "created": "User created successfully",

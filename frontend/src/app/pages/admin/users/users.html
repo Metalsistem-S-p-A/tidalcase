@@ -78,6 +78,19 @@
 
         @if (isNewUser()) {
         <div class="flex flex-col gap-2">
+            <label for="usertype" class="font-medium">{{ 'users.usertype' | translate }}</label>
+            <p-select id="usertype" formControlName="usertype" [options]="usertypeOptions"
+                optionLabel="label" optionValue="value" [fluid]="true" appendTo="body"
+                (onChange)="onUsertypeChange()">
+            </p-select>
+            @if (isExternalUser) {
+                <small class="text-surface-500">{{ 'users.externalNote' | translate }}</small>
+            }
+        </div>
+        }
+
+        @if (isNewUser() && !isExternalUser) {
+        <div class="flex flex-col gap-2">
             <label for="password" class="font-medium">{{ 'auth.password' | translate }} *</label>
             <p-password id="password" formControlName="password" [toggleMask]="true" [fluid]="true"
                 [feedback]="true">
