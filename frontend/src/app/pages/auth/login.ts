@@ -58,8 +58,8 @@ export class Login implements OnInit {
             // Check for token from OAuth/Azure redirect
             if (params['token']) {
 
-                // Store token in sessionStorage with correct key (same as AuthService)
-                sessionStorage.setItem('auth_token', params['token']);
+                // Store token in localStorage with correct key (same as AuthService)
+                localStorage.setItem('auth_token', params['token']);
 
                 // Decode token to set user info
                 try {

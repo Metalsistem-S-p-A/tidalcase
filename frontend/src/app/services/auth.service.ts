@@ -115,7 +115,7 @@ export class AuthService {
     }
 
     storeToken(token: string): void {
-        sessionStorage.setItem(this.TOKEN_KEY, token);
+        localStorage.setItem(this.TOKEN_KEY, token);
         if (this.isTokenValid()) {
             this.loadUserFromToken();
             this.isAuthenticated.set(true);
@@ -155,15 +155,15 @@ export class AuthService {
     }
 
     private getToken(): string | null {
-        return sessionStorage.getItem(this.TOKEN_KEY);
+        return localStorage.getItem(this.TOKEN_KEY);
     }
 
     private setToken(token: string): void {
-        sessionStorage.setItem(this.TOKEN_KEY, token);
+        localStorage.setItem(this.TOKEN_KEY, token);
     }
 
     private removeToken(): void {
-        sessionStorage.removeItem(this.TOKEN_KEY);
+        localStorage.removeItem(this.TOKEN_KEY);
     }
 
     private isTokenValid(): boolean {

@@ -74,7 +74,7 @@ def _generate_jwt(user, auth_provider='local', auth_provider_name=None):
     return pyjwt.encode(payload, secret, algorithm="HS256")
 
 
-def _full_jwt_response(user, auth_provider='local', auth_provider_name=None, remember_me=False, auth_provider_id=None):
+def _full_jwt_response(user, auth_provider='local', auth_provider_name=None, remember_me=True, auth_provider_id=None):
     token = _generate_jwt(user, auth_provider, auth_provider_name)
     is_admin, permissions = _build_user_permissions(user.id)
     resp = _jwt_response({
@@ -455,8 +455,7 @@ def verify_mfa():
         response_data['deviceId'] = str(trusted.id)
 
     resp = _jwt_response(response_data, jwt_token)
-    if remember_me:
-        _attach_refresh_token(resp, user, auth_provider_id)
+    _attach_refresh_token(resp, user, auth_provider_id)
     return resp
 
 
@@ -492,7 +491,7 @@ def refresh():
     rt.expires_at = now + datetime.timedelta(days=REFRESH_TOKEN_EXPIRY_DAYS)
     app.utils.extensions.db.session.commit()
 
-    resp = _full_jwt_response(user, auth_provider, auth_provider_name)
+    resp = _full_jwt_response(user, auth_provider, auth_provider_name, remember_me=False)
     resp.set_cookie(
         'refresh_token', new_token_value,
         httponly=True, samesite='Lax',
