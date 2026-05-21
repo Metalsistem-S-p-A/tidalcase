@@ -95,7 +95,7 @@ export class TideService {
         return this.http.get<{ success: boolean }>(`/api/instance/${instanceId}/destroy`);
     }
 
-    getTideInfo(instanceId: string): Observable<{ success: boolean; guacamole: boolean; guac_token: string; vnc_url: string }> {
+    getTideInfo(instanceId: string): Observable<{ success: boolean; guacamole: boolean; guac_token: string; vnc_url: string; tide: { id: string; display_name: string; tide_type: string }; session_idle_time_limit: number; session_time_limit: number }> {
         return this.http.get<any>(`/api/tide/${instanceId}/info`);
     }
 

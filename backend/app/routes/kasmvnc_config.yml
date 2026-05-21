@@ -6,8 +6,9 @@ network:
     public_ip: 127.0.0.1
 
 user_session:
-  session_type: "exclusive"
-  new_session_disconnects_existing_exclusive_session: true
+  session_type: "shared"
+  #concurrent_connections_prompt: true
+  #concurrent_connections_prompt_timeout: 30
   idle_timeout: {idle_val}
 
 server:

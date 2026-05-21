@@ -45,6 +45,9 @@ export class SessionPage implements OnInit, OnDestroy {
 
     isGuacSession = signal(false);
 
+    viewOnly = signal(false);
+    isAdminSession = signal(false);
+
     connected = signal(false);
     connectionFailed = signal(false);
     panelVisible = signal(false);
@@ -188,15 +191,15 @@ export class SessionPage implements OnInit, OnDestroy {
             this.location.replaceState('/session/' + this.instanceId);
         }
 
+        const voParam = this.route.snapshot.queryParamMap.get('view_only');
+        this.viewOnly.set(voParam === 'true' || voParam === '1');
+
         const u = this.authService.currentUser();
         if(u) {
             this.canAudio.set(u.settings["allow_audio"]);
             this.canUpload.set(u.settings["allow_uploads"]);
             this.canDownload.set(u.settings["allow_downloads"]);
         }
-        
-        //this.videoQualityElement = (this.vncIframe()?.nativeElement.contentDocument?.getElementById('noVNC_setting_video_quality') as HTMLInputElement);
-        //this.qualityLevel.set(this.videoQualityElement.value);
 
         window.addEventListener('message', this.onMessage);
         document.addEventListener('fullscreenchange', this.onFullscreenChange);
@@ -206,41 +209,71 @@ export class SessionPage implements OnInit, OnDestroy {
             next: (res) => {
                 if(!res) return;
                 const i = res.instances.find(i => i.id === this.instanceId);
-                this.instance.set(i ?? null);
-                if (!this.instance()) {
-                    this.disconnect();
-                    return;
-                }
-                const tideName = this.instance()?.tide?.display_name;
-                if (tideName) this.titleService.setTitle("Tidalcase - " + tideName);
-
-                const tideType = this.instance()?.tide?.tide_type;
-                const isGuac = tideType === 'vnc' || tideType === 'rdp' || tideType === 'ssh';
-                this.isGuacSession.set(isGuac);
-                if (isGuac) {
-                    this.progress.set(this.translateService.instant('session.loading'));
+                if (i) {
+                    this._initFromInstance(i);
+                } else {
+                    // Fallback for admin shadowing: instance belongs to another user
                     this.tideService.getTideInfo(this.instanceId).subscribe({
                         next: (info) => {
-                            const base = info.vnc_url ?? this.instance()?.vnc_url;
-                            if (base && info.guac_token) {
-                                const url = `${base}vnc.html?instance_id=${this.instanceId}&guac_token=${encodeURIComponent(info.guac_token)}`;
-                                this.iframeUrl.set(this.sanitizer.bypassSecurityTrustResourceUrl(url));
-                                this.progress.set(this.translateService.instant('session.connected'));
-                                this.connected.set(true);
-                            }
+                            if (!info.success) { this.disconnect(); return; }
+                            const synthetic: any = {
+                                id: this.instanceId,
+                                tide: { ...info.tide, session_idle_time_limit: info.session_idle_time_limit, session_time_limit: info.session_time_limit },
+                                agent: {},
+                                user: { id: '', username: '' },
+                                vnc_url: info.vnc_url,
+                                guac_token: info.guac_token,
+                            };
+                            this._initFromInstance(synthetic, info);
                         },
                         error: () => this.disconnect(),
                     });
-                } else if (this.instance()?.vnc_url) {
-                    const parsed = new URL(this.instance()?.vnc_url!);
-                    this.agentBase = `${parsed.protocol}//${parsed.host}`;
-                    this.iframeUrl.set(this.sanitizer.bypassSecurityTrustResourceUrl(this.instance()?.vnc_url!));
                 }
             },
-            error: () => {
-                this.disconnect();
-            }
+            error: () => this.disconnect(),
         });
+    }
+
+    private _initFromInstance(instance: any, tideInfo?: any) {
+        this.instance.set(instance);
+        if (tideInfo) { this.resizeMode.set('scale'); this.isAdminSession.set(true); }
+        const tideName = instance.tide?.display_name;
+        if (tideName) this.titleService.setTitle('Tidalcase - ' + tideName);
+
+        const tideType = instance.tide?.tide_type;
+        const isGuac = tideType === 'vnc' || tideType === 'rdp' || tideType === 'ssh';
+        this.isGuacSession.set(isGuac);
+
+        if (isGuac) {
+            this.progress.set(this.translateService.instant('session.loading'));
+            const buildGuacUrl = (info: any) => {
+                const base = info.vnc_url ?? instance.vnc_url;
+                if (base && info.guac_token) {
+                    const url = `${base}vnc.html?instance_id=${this.instanceId}&guac_token=${encodeURIComponent(info.guac_token)}`;
+                    this.iframeUrl.set(this.sanitizer.bypassSecurityTrustResourceUrl(url));
+                    this.progress.set(this.translateService.instant('session.connected'));
+                    this.connected.set(true);
+                }
+            };
+            if (tideInfo?.guac_token) {
+                buildGuacUrl(tideInfo);
+            } else {
+                this.tideService.getTideInfo(this.instanceId).subscribe({
+                    next: (info) => buildGuacUrl(info),
+                    error: () => this.disconnect(),
+                });
+            }
+        } else {
+            const rawUrl: string | undefined = tideInfo?.vnc_url ?? instance.vnc_url;
+            if (rawUrl) {
+                const parsed = new URL(rawUrl);
+                this.agentBase = `${parsed.protocol}//${parsed.host}`;
+                const url = this.viewOnly()
+                    ? (rawUrl.includes('?') ? `${rawUrl}&view_only=true` : `${rawUrl}?view_only=true`)
+                    : rawUrl;
+                this.iframeUrl.set(this.sanitizer.bypassSecurityTrustResourceUrl(url));
+            }
+        }
     }
 
     ngOnDestroy() {

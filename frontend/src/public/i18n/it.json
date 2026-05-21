@@ -474,6 +474,7 @@
       "pause": "Pausa",
       "resume": "Riprendi",
       "view": "Visualizza (sola lettura)",
+      "shadow": "Shadow (assistenza remota)",
       "pauseError": "Impossibile cambiare stato dell'istanza.",
       "empty": "Nessuna istanza in esecuzione",
       "confirmDelete": "Terminare l'istanza di \"{{tide}}\" (utente: {{user}})?",

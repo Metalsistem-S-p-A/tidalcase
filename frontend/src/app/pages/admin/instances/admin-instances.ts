@@ -12,7 +12,6 @@ import { ToastModule } from 'primeng/toast';
 import { TooltipModule } from 'primeng/tooltip';
 import { TranslateService } from '@ngx-translate/core';
 import { AdminTideService } from '../../../services/admin-tide.service';
-import { TideInstance } from '@/app/services/tide.service';
 
 @Component({
     selector: 'app-admin-instances',
@@ -87,10 +86,11 @@ export class AdminInstances implements OnInit {
     }
 
     viewInstance(instance: any) {
-        const url = instance.direct_url;
-        if (!url) return;
-        const viewUrl = url.includes('?') ? `${url}&view_only=true` : `${url}?view_only=true`;
-        window.open(viewUrl, '_blank', 'noopener,noreferrer');
+        window.open(`/session/${instance.id}?mode=tab&view_only=true`, '_blank', 'noopener,noreferrer');
+    }
+
+    shadowInstance(instance: any) {
+        window.open(`/session/${instance.id}?mode=tab`, '_blank', 'noopener,noreferrer');
     }
 
     isVncSession(instance: any): boolean {

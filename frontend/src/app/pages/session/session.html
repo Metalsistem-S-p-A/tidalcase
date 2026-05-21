@@ -32,6 +32,7 @@
     </div>
 
     <!-- Icon toggle bar -->
+    @if (!viewOnly()) {
     <div class="flex items-center justify-start gap-3 px-3 py-3 bg-white border-b border-gray-200">
         <!-- Sound -->
         @if (canAudio() && kasmAudioAvailable() && !isGuacSession()) {
@@ -71,12 +72,14 @@
         </div>
 
     </div>
+    }
 
     <!-- Items list -->
     <div class="flex-1 min-h-0 overflow-y-auto">
     <div class="p-3 flex flex-col gap-2">
 
         <!-- Clipboard -->
+        @if (!viewOnly()) {
         <div class="bg-white rounded-xl shadow-sm overflow-hidden">
             <div class="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-gray-50 transition-colors"
                  (click)="toggleClipboard()" role="button" tabindex="0" (keydown.enter)="toggleClipboard()">
@@ -103,9 +106,10 @@
             </div>
             }
         </div>
+        }
 
         <!-- Downloads -->
-         @if (canDownload() && !isGuacSession()) {
+         @if (canDownload() && !isGuacSession() && !viewOnly()) {
         <div class="bg-white rounded-xl shadow-sm overflow-hidden">
             <div class="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-gray-50 transition-colors"
                  (click)="toggleDownloads()" role="button" tabindex="0" (keydown.enter)="toggleDownloads()"
@@ -151,7 +155,7 @@
         }
 
         <!-- Upload -->
-         @if (canUpload() && !isGuacSession()) {
+         @if (canUpload() && !isGuacSession() && !viewOnly()) {
         <div class="bg-white rounded-xl shadow-sm flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-gray-50 transition-colors"
              (click)="openUpload()" role="button" tabindex="0" (keydown.enter)="openUpload()"
              [class.pointer-events-none]="uploading()">
@@ -177,7 +181,7 @@
         }
 
         <!-- Quality (container/KasmVNC sessions only) -->
-        @if (!isGuacSession()) {
+        @if (!isGuacSession() && !viewOnly()) {
         <div class="bg-white rounded-xl shadow-sm overflow-hidden">
             <div class="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-gray-50 transition-colors"
                  (click)="qualityOpen.set(!qualityOpen())" role="button" tabindex="0"
@@ -211,7 +215,7 @@
         }
 
         <!-- Resize mode (container sessions only) -->
-        @if (!isGuacSession()) {
+        @if (!isGuacSession() && !viewOnly()) {
         <div class="bg-white rounded-xl shadow-sm overflow-hidden">
             <div class="flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-gray-50 transition-colors"
                  (click)="resizeOpen.set(!resizeOpen())" role="button" tabindex="0"
@@ -351,7 +355,9 @@
         </div>
         }
 
+        @if (!viewOnly()) {
         <div class="h-px bg-gray-200 mx-1"></div>
+        }
 
         <!-- Disconnect -->
         <div class="bg-white rounded-xl shadow-sm flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-gray-50 transition-colors"
@@ -367,6 +373,7 @@
         </div>
 
         <!-- Terminate -->
+        @if (!viewOnly() && !isAdminSession()) {
         <div class="bg-white rounded-xl shadow-sm flex items-center gap-3 px-4 py-3 cursor-pointer hover:bg-gray-50 transition-colors"
              (click)="terminate()" role="button" tabindex="0" (keydown.enter)="terminate()">
             <div class="size-10 rounded-xl bg-red-500 flex items-center justify-center shrink-0 text-white text-base" aria-hidden="true">
@@ -378,6 +385,7 @@
             </div>
             <i class="pi pi-chevron-right text-gray-300 text-[13px]" aria-hidden="true"></i>
         </div>
+        }
 
     </div>
     </div>

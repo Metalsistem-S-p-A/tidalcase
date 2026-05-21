@@ -49,6 +49,14 @@
                                         [pTooltip]="'admin.instances.view' | translate"
                                         (onClick)="viewInstance(i)">
                                     </p-button>
+                                    <p-button
+                                        icon="pi pi-desktop"
+                                        severity="info"
+                                        [outlined]="true"
+                                        size="small"
+                                        [pTooltip]="'admin.instances.shadow' | translate"
+                                        (onClick)="shadowInstance(i)">
+                                    </p-button>
                                 }
                                 <p-button
                                     [icon]="i.paused ? 'pi pi-play' : 'pi pi-pause'"

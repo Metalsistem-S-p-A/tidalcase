@@ -474,6 +474,7 @@
       "pause": "Pause",
       "resume": "Resume",
       "view": "View (read-only)",
+      "shadow": "Shadow (remote assistance)",
       "pauseError": "Failed to change instance state.",
       "empty": "No running instances",
       "confirmDelete": "Terminate instance of \"{{tide}}\" (user: {{user}})?",
