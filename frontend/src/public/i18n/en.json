@@ -275,7 +275,7 @@
     "empty": "No tides available",
     "launch": "Launch",
     "pulling": "Pull in progress",
-    "pullingDetail": "Image downloading, please retry in a moment.",
+    "pullingDetail": "Image downloading.",
     "launchError": "Cannot start the tide.",
     "launchErrorDetail": "Error during startup",
     "credentialsDialog": "Credentials required",
@@ -334,7 +334,9 @@
     "allowUploads": "Allow file uploads",
     "allowDownloads": "Allow file downloads",
     "autoStartTide": "Auto-start tide",
-    "autoStartTideNone": "None (disabled)"
+    "autoStartTideNone": "None (disabled)",
+    "browserHomepage": "Browser homepage",
+    "browserHomepageTooltip": "Homepage enforced in Firefox/Chrome inside sessions of this group's users. Leave empty for the image default."
   },
   "admin": {
     "common": {
@@ -536,3 +538,4 @@
     "idleTimeout": "Session terminated due to inactivity"
   }
 }
+                          

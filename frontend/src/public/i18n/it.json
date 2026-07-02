@@ -275,7 +275,7 @@
     "empty": "Nessun tide disponibile",
     "launch": "Avvia",
     "pulling": "Pull in corso",
-    "pullingDetail": "Immagine in download, riprova tra poco.",
+    "pullingDetail": "Immagine in download",
     "launchError": "Impossibile avviare la tide.",
     "launchErrorDetail": "Errore durante l'avvio",
     "credentialsDialog": "Credenziali richieste",
@@ -334,7 +334,9 @@
     "allowUploads": "Consenti upload file",
     "allowDownloads": "Consenti download file",
     "autoStartTide": "Tide avvio automatico",
-    "autoStartTideNone": "Nessuna (disabilitato)"
+    "autoStartTideNone": "Nessuna (disabilitato)",
+    "browserHomepage": "Homepage browser",
+    "browserHomepageTooltip": "Homepage imposta in Firefox/Chrome nelle sessioni degli utenti di questo gruppo. Vuoto = default dell'immagine."
   },
   "admin": {
     "common": {
@@ -536,3 +538,4 @@
     "idleTimeout": "Sessione terminata per inattività"
   }
 }
+                   

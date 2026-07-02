@@ -73,11 +73,12 @@ export class GroupsComponent implements OnInit {
     readonly form = this.fb.group({
         display_name:           ['', Validators.required],
         priority:               [0],
-        max_sessions_per_user:  [0],
+        max_sessions_per_user:  [null as number | null],
         allow_audio:            [null as boolean | null],
         allow_uploads:          [null as boolean | null],
         allow_downloads:        [null as boolean | null],
         auto_start_tide_id:     [null as string | null],
+        browser_homepage:       [null as string | null],
         perm_admin_panel:       [false],
         perm_view_instances:    [false],
         perm_edit_instances:    [false],
@@ -138,7 +139,7 @@ export class GroupsComponent implements OnInit {
     showCreateDialog(): void {
         this.isNewGroup.set(true);
         this.selectedGroup.set(null);
-        this.form.reset({ display_name: '', priority: 0, max_sessions_per_user: 0, allow_audio: null, auto_start_tide_id: null });
+        this.form.reset({ display_name: '', priority: 0, max_sessions_per_user: null, allow_audio: null, auto_start_tide_id: null, browser_homepage: null });
         this.displayDialog.set(true);
     }
 
@@ -148,11 +149,12 @@ export class GroupsComponent implements OnInit {
         this.form.patchValue({
             display_name:          group.display_name,
             priority:              group.priority ?? 0,
-            max_sessions_per_user: group.settings?.max_sessions_per_user ?? 0,
+            max_sessions_per_user: group.settings?.max_sessions_per_user ?? null,
             allow_audio:           group.settings?.allow_audio ?? null,
             allow_downloads:       group.settings?.allow_downloads ?? null,
             allow_uploads:         group.settings?.allow_uploads ?? null,
             auto_start_tide_id:    group.settings?.auto_start_tide_id ?? null,
+            browser_homepage:      group.settings?.browser_homepage ?? null,
             perm_admin_panel:      group.permissions.admin_panel,
             perm_view_instances:   group.permissions.view_instances,
             perm_edit_instances:   group.permissions.edit_instances,
@@ -186,11 +188,12 @@ export class GroupsComponent implements OnInit {
             display_name:        v.display_name!,
             priority:            v.priority ?? 0,
             settings:            {
-                max_sessions_per_user: v.max_sessions_per_user ?? 0,
+                max_sessions_per_user: v.max_sessions_per_user ?? null,
                 allow_audio: v.allow_audio ?? null,
                 allow_downloads: v.allow_downloads ?? null,
                 allow_uploads: v.allow_uploads ?? null,
                 auto_start_tide_id: v.auto_start_tide_id || null,
+                browser_homepage: v.browser_homepage?.trim() || null,
             },
             perm_admin_panel:    v.perm_admin_panel ?? false,
             perm_view_instances: v.perm_view_instances ?? false,

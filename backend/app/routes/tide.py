@@ -251,6 +251,71 @@ def _tz_env() -> dict:
     
     return {"TZ": tz_name}
 
+def _browser_policy_config_files(user, lang: str = 'en') -> list:
+    """Build browser policy config files mounted into every kasm container.
+
+    Firefox always gets a base policy (no ToS modal, no first-run page, no
+    crash-restore / reset prompts). If the user's groups define a
+    'browser_homepage' setting (highest-priority group wins), the homepage
+    is enforced in both Firefox and Chrome/Chromium. Locked, otherwise any
+    user_pref baked into the image profile would take precedence.
+    """
+    url = user.setting_value("browser_homepage")
+    url = url.strip() if isinstance(url, str) else None
+
+    firefox_policies = {
+        "SkipTermsOfUse": True,
+        "OverrideFirstRunPage": "",
+        "TranslateEnabled": False,
+        "DontCheckDefaultBrowser": True,
+        # UI language (matching langpack is baked into the image)
+        "RequestedLocales": [lang, "en-US"] if lang != 'en' else ["en-US"],
+        "Preferences": {
+            "browser.sessionstore.resume_from_crash": {
+                "Value": False,
+                "Status": "locked",
+            },
+            # disables the "Open previous tabs?" infobar
+            "browser.startup.couldRestoreSession.count": {
+                "Value": -1,
+                "Status": "locked",
+            },
+        },
+    }
+    if url:
+        firefox_policies["Homepage"] = {
+            "URL": url,
+            "StartPage": "homepage",
+            "Locked": True,
+        }
+    firefox_policy = json.dumps({"policies": firefox_policies}, indent=2)
+
+    files = [
+        # Firefox: system-wide policies dir + distribution dir of the
+        # possible install locations (extra mounts are harmless if absent)
+        {"path": "/etc/firefox/policies/policies.json", "content": firefox_policy},
+        {"path": "/usr/lib/firefox/distribution/policies.json", "content": firefox_policy},
+        {"path": "/usr/lib/firefox-esr/distribution/policies.json", "content": firefox_policy},
+        {"path": "/opt/firefox/distribution/policies.json", "content": firefox_policy},
+    ]
+
+    if url:
+        chrome_policy = json.dumps({
+            "HomepageLocation": url,
+            "HomepageIsNewTabPage": False,
+            "ShowHomeButton": True,
+            "RestoreOnStartup": 4,
+            "RestoreOnStartupURLs": [url],
+        }, indent=2)
+        files += [
+            # Google Chrome / Chromium managed policy
+            {"path": "/etc/opt/chrome/policies/managed/tidalcase-homepage.json", "content": chrome_policy},
+            {"path": "/etc/chromium/policies/managed/tidalcase-homepage.json", "content": chrome_policy},
+        ]
+
+    return files
+
+
 def _build_kasmvnc_config(tide: app.models.tide.Tide) -> str:
     idle_min = tide.session_idle_time_limit or 0
     idle_val = str(idle_min * 60) if idle_min > 0 else "never"
@@ -340,7 +405,7 @@ def _request_instance_via_agent(agent, tide: app.models.tide.Tide, lang: str = '
                 config_files=[{
                     "path": "/etc/kasmvnc/kasmvnc.yaml",
                     "content": _build_kasmvnc_config(tide),
-                }],
+                }] + _browser_policy_config_files(flask.g.current_user, lang),
                 auth_header=auth_header,
                 session_time_limit_s=session_limit_s or None,
             )

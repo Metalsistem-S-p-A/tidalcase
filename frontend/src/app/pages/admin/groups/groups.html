@@ -132,6 +132,11 @@
                     <p-selectbutton [options]="stateOptions" id="allow_downloads" formControlName="allow_downloads" styleClass="w-full"></p-selectbutton>
                 </div>
                 <div class="flex flex-col gap-2 col-span-2">
+                    <label for="browser_homepage" class="text-sm font-medium" translate>groups.browserHomepage</label>
+                    <input pInputText id="browser_homepage" formControlName="browser_homepage" class="w-full"
+                        placeholder="https://" [pTooltip]="'groups.browserHomepageTooltip' | translate" />
+                </div>
+                <div class="flex flex-col gap-2 col-span-2">
                     <label for="auto_start_tide_id" class="text-sm font-medium" translate>groups.autoStartTide</label>
                     <p-select id="auto_start_tide_id" formControlName="auto_start_tide_id"
                         [options]="availableTides()" optionLabel="label" optionValue="value"

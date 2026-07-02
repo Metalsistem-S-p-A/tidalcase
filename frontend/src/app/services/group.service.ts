@@ -17,11 +17,12 @@ export interface GroupPermissions {
 }
 
 export interface GroupSettings {
-    max_sessions_per_user: number;
+    max_sessions_per_user: number | null;
     allow_audio: boolean | null;
     allow_downloads: boolean | null;
     allow_uploads: boolean | null;
     auto_start_tide_id?: string | null;
+    browser_homepage?: string | null;
 }
 
 export interface Group {
