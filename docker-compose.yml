@@ -30,6 +30,7 @@ services:
       - --entrypoints.websecure.address=:443
       - --entrypoints.authentik.address=:9443
       - --entrypoints.registry.address=:5443
+      - --entrypoints.registry.transport.respondingTimeouts.readTimeout=0
       - --entrypoints.registry-ui.address=:6443
       - --entrypoints.web.http.redirections.entrypoint.to=websecure
       - --entrypoints.web.http.redirections.entrypoint.scheme=https
@@ -191,7 +192,7 @@ services:
     restart: unless-stopped
     environment:
       TZ: "Europe/Rome"
-      REGISTRY_HTTP_ADDR: 127.0.0.1:5001
+      REGISTRY_HTTP_ADDR: 0.0.0.0:5001
       REGISTRY_NAME: ${REGISTRY_NAME:-Tidalcase Registry}
       REGISTRY_IMAGE_PREFIX: ${REGISTRY_IMAGE_PREFIX:-}
       ICONS_DIR: /icons
@@ -206,7 +207,13 @@ services:
       - traefik.http.routers.registry.rule=Host(`${DOMAIN}`)
       - traefik.http.routers.registry.entrypoints=registry
       - traefik.http.routers.registry.tls=true
+      - traefik.http.routers.registry.service=registry
       - traefik.http.services.registry.loadbalancer.server.port=5000
+      - traefik.http.routers.registry-v2.rule=Host(`${DOMAIN}`) && PathPrefix(`/v2`)
+      - traefik.http.routers.registry-v2.entrypoints=registry
+      - traefik.http.routers.registry-v2.tls=true
+      - traefik.http.routers.registry-v2.service=registry-v2
+      - traefik.http.services.registry-v2.loadbalancer.server.port=5001
 
   tidalcase-registry-ui:
     profiles: [registry]
@@ -320,3 +327,4 @@ volumes:
   registry_data:
   agent-data:
   vnc-nginx-instances:
+                                                                                                                            

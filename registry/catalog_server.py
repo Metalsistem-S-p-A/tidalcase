@@ -181,4 +181,4 @@ class Handler(http.server.BaseHTTPRequestHandler):
 
 if __name__ == '__main__':
     print(f"Catalog server :{CATALOG_PORT} → {REGISTRY_INTERNAL}", flush=True)
-    http.server.HTTPServer(('0.0.0.0', CATALOG_PORT), Handler).serve_forever()
+    http.server.ThreadingHTTPServer(('0.0.0.0', CATALOG_PORT), Handler).serve_forever()
