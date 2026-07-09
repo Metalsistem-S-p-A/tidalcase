@@ -1,7 +1,7 @@
-import { CommonModule } from '@angular/common';
+import { CommonModule, Location } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnDestroy, OnInit, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router, RouterModule } from '@angular/router';
+import { ActivatedRoute, Router, RouterModule } from '@angular/router';
 import { TranslateModule, TranslateService } from '@ngx-translate/core';
 import { Subscription, forkJoin, interval, of } from 'rxjs';
 import { catchError, switchMap } from 'rxjs/operators';
@@ -36,6 +36,8 @@ export class Dashboard implements OnInit, OnDestroy {
     private languageService = inject(LanguageService);
     private translate = inject(TranslateService);
     private router = inject(Router);
+    private route = inject(ActivatedRoute);
+    private location = inject(Location);
     authService = inject(AuthService);
 
     loading = signal(true);
@@ -106,6 +108,19 @@ export class Dashboard implements OnInit, OnDestroy {
                 this.agentsCount.set(agentList.length);
                 this.healthyAgentsCount.set(agentList.filter((a: any) => a.healthy).length);
                 this.loading.set(false);
+
+                // Deep link: /?start=<tide_id> launches that tide once.
+                const startId = this.route.snapshot.queryParamMap.get('start');
+                if (startId) {
+                    this.location.replaceState('/');
+                    const tide = tideList.find(t => t.id === startId);
+                    if (tide) {
+                        sessionStorage.setItem('auto_start_done', '1');
+                        this.launch(tide);
+                        return;
+                    }
+                }
+
                 this.tryAutoStart(sess, tideList);
             },
             error: () => { this.loading.set(false); }

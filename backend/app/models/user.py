@@ -46,7 +46,7 @@ class User(app.utils.extensions.db.Model):
         for group in groups:
             result.update({k: v for k, v in (group.settings or {}).items() if v is not None})
         if self.auto_start_tide_id:
-            result['auto_start_tide_id'] = self.auto_start_tide_id
+            result['auto_start_tide_id'] = str(self.auto_start_tide_id)
         if self.preferred_language:
             result['preferred_language'] = self.preferred_language
         return result

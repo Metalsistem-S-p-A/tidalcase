@@ -120,7 +120,7 @@ export class AdminTides implements OnInit {
     connectionSettingsJson = '{}';
 
     openNew() {
-        this.editingTide = { tide_type: 'container', container_cores: 2, container_memory: '1g', container_swap: '128m', agent_selection_mode: 'auto', vnc_user: 'kasm_user' };
+        this.editingTide = { tide_type: 'container', container_cores: 2, container_memory: '1g', container_swap: '128m', container_shm: '512m', agent_selection_mode: 'auto', vnc_user: 'kasm_user' };
         this.connectionSettingsJson = '{}';
         this.storageMounts.set([]);
         this.restrictedGroupIds = [];

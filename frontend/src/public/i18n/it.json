@@ -357,6 +357,8 @@
       "ram": "RAM",
       "swap": "Swap aggiuntivo",
       "swapHelp": "Swap aggiuntivo oltre la RAM (es. 1g). Lascia vuoto per nessun limite di swap.",
+      "shm": "Memoria condivisa",
+      "shmHelp": "Dimensione di /dev/shm (es. 512m). Un valore troppo basso può far crashare i browser eseguiti nel tide. Lascia vuoto per il default di 512m.",
       "vncUser": "Utente VNC",
       "uploadPath": "Percorso upload",
       "downloadPath": "Percorso download",
@@ -538,4 +540,3 @@
     "idleTimeout": "Sessione terminata per inattività"
   }
 }
-                   

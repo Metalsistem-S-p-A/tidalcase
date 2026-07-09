@@ -21,6 +21,7 @@ class Tide(app.utils.extensions.db.Model):
     container_cores = app.utils.extensions.db.Column(app.utils.extensions.db.Integer, nullable=True)
     container_memory = app.utils.extensions.db.Column(app.utils.extensions.db.String(20), nullable=True)
     container_swap = app.utils.extensions.db.Column(app.utils.extensions.db.String(20), nullable=True)
+    container_shm = app.utils.extensions.db.Column(app.utils.extensions.db.String(20), nullable=True)
     container_network = app.utils.extensions.db.Column(app.utils.extensions.db.String(255), nullable=True)
     server_ip = app.utils.extensions.db.Column(app.utils.extensions.db.String(255), nullable=True)
     server_port = app.utils.extensions.db.Column(app.utils.extensions.db.Integer, nullable=True)

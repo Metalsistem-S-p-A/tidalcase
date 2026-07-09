@@ -14,6 +14,7 @@ export interface Tide {
     container_cores?: number;
     container_memory?: string;
     container_swap?: string;
+    container_shm?: string;
     container_persistent_profile_path?: string;
     container_network?: string;
     server_ip?: string;

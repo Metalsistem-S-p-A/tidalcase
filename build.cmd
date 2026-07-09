@@ -1,3 +1,7 @@
+set GITHUB_TOKEN="***REMOVED***"
+set REG="ghcr.io/metalsistem-s-p-a"
+::set REG="tidalcase.metalsistem.com:5443"
+
 docker build -t tidalcase-backend:1.0 ^
   --label "org.opencontainers.image.title=Tidalcase Backend" ^
   --label "org.opencontainers.image.description=Tidalcase backend service" ^
@@ -35,30 +39,30 @@ docker build -t tidalcase-registry:1.0 ^
   --label "tidalcase.icon=favicon.png" ^
   ./registry
 
-docker tag tidalcase-backend:1.0 tidalcase.metalsistem.com:5443/tidalcase-backend:1.0
-docker tag tidalcase-frontend:1.0 tidalcase.metalsistem.com:5443/tidalcase-frontend:1.0
-docker tag tidalcase-agent:1.0 tidalcase.metalsistem.com:5443/tidalcase-agent:1.0
-docker tag tidalcase-agent-nginx:1.0 tidalcase.metalsistem.com:5443/tidalcase-agent-nginx:1.0
-docker tag tidalcase-guac:1.0 tidalcase.metalsistem.com:5443/tidalcase-guac:1.0
-docker tag tidalcase-registry:1.0 tidalcase.metalsistem.com:5443/tidalcase-registry:1.0
+docker tag tidalcase-backend:1.0 %REG%/tidalcase-backend:1.0
+docker tag tidalcase-frontend:1.0 %REG%/tidalcase-frontend:1.0
+docker tag tidalcase-agent:1.0 %REG%/tidalcase-agent:1.0
+docker tag tidalcase-agent-nginx:1.0 %REG%/tidalcase-agent-nginx:1.0
+docker tag tidalcase-guac:1.0 %REG%/tidalcase-guac:1.0
+docker tag tidalcase-registry:1.0 %REG%/tidalcase-registry:1.0
 
-docker tag tidalcase-backend:1.0 tidalcase.metalsistem.com:5443/tidalcase-backend:latest
-docker tag tidalcase-frontend:1.0 tidalcase.metalsistem.com:5443/tidalcase-frontend:latest
-docker tag tidalcase-agent:1.0 tidalcase.metalsistem.com:5443/tidalcase-agent:latest
-docker tag tidalcase-agent-nginx:1.0 tidalcase.metalsistem.com:5443/tidalcase-agent-nginx:latest
-docker tag tidalcase-guac:1.0 tidalcase.metalsistem.com:5443/tidalcase-guac:latest
-docker tag tidalcase-registry:1.0 tidalcase.metalsistem.com:5443/tidalcase-registry:latest
+docker tag tidalcase-backend:1.0 %REG%/tidalcase-backend:latest
+docker tag tidalcase-frontend:1.0 %REG%/tidalcase-frontend:latest
+docker tag tidalcase-agent:1.0 %REG%/tidalcase-agent:latest
+docker tag tidalcase-agent-nginx:1.0 %REG%/tidalcase-agent-nginx:latest
+docker tag tidalcase-guac:1.0 %REG%/tidalcase-guac:latest
+docker tag tidalcase-registry:1.0 %REG%/tidalcase-registry:latest
 
-docker push tidalcase.metalsistem.com:5443/tidalcase-backend:1.0
-docker push tidalcase.metalsistem.com:5443/tidalcase-frontend:1.0
-docker push tidalcase.metalsistem.com:5443/tidalcase-agent:1.0
-docker push tidalcase.metalsistem.com:5443/tidalcase-agent-nginx:1.0
-docker push tidalcase.metalsistem.com:5443/tidalcase-guac:1.0
-docker push tidalcase.metalsistem.com:5443/tidalcase-registry:1.0
+docker push %REG%/tidalcase-backend:1.0
+docker push %REG%/tidalcase-frontend:1.0
+docker push %REG%/tidalcase-agent:1.0
+docker push %REG%/tidalcase-agent-nginx:1.0
+docker push %REG%/tidalcase-guac:1.0
+docker push %REG%/tidalcase-registry:1.0
 
-docker push tidalcase.metalsistem.com:5443/tidalcase-backend:latest
-docker push tidalcase.metalsistem.com:5443/tidalcase-frontend:latest
-docker push tidalcase.metalsistem.com:5443/tidalcase-agent:latest
-docker push tidalcase.metalsistem.com:5443/tidalcase-agent-nginx:latest
-docker push tidalcase.metalsistem.com:5443/tidalcase-guac:latest
-docker push tidalcase.metalsistem.com:5443/tidalcase-registry:latest
+docker push %REG%/tidalcase-backend:latest
+docker push %REG%/tidalcase-frontend:latest
+docker push %REG%/tidalcase-agent:latest
+docker push %REG%/tidalcase-agent-nginx:latest
+docker push %REG%/tidalcase-guac:latest
+docker push %REG%/tidalcase-registry:latest

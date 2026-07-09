@@ -124,6 +124,11 @@
                     <input pInputText [(ngModel)]="editingTide.container_swap" class="w-full" placeholder="1g, 512m" />
                     <small class="text-surface-400 text-xs">{{ 'admin.tides.swapHelp' | translate }}</small>
                 </div>
+                <div class="col-span">
+                    <label class="block text-sm font-medium mb-1">{{ 'admin.tides.shm' | translate }}</label>
+                    <input pInputText [(ngModel)]="editingTide.container_shm" class="w-full" placeholder="512m, 1g" />
+                    <small class="text-surface-400 text-xs">{{ 'admin.tides.shmHelp' | translate }}</small>
+                </div>
                 <div class="col-span-3">
                     <label class="block text-sm font-medium mb-1">{{ 'admin.tides.vncUser' | translate }}</label>
                     <input pInputText [(ngModel)]="editingTide.vnc_user" class="w-full" placeholder="kasm_user" />

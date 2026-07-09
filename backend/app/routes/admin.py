@@ -176,6 +176,7 @@ def api_admin_tides():
             "container_cores": tide.container_cores,
             "container_memory": tide.container_memory,
             "container_swap": tide.container_swap,
+            "container_shm": tide.container_shm,
             "container_network": tide.container_network,
             "server_ip": tide.server_ip,
             "server_port": tide.server_port,
@@ -249,6 +250,10 @@ def api_admin_edit_tide():
         if raw_swap and not _MEM_RE.match(raw_swap):
             return flask.jsonify({"success": False, "error": "Swap must be a Docker memory string (e.g. 1g, 512m)"}), 400
 
+        raw_shm = str(flask.request.json.get('container_shm') or '').strip()
+        if raw_shm and not _MEM_RE.match(raw_shm):
+            return flask.jsonify({"success": False, "error": "Shared Memory must be a Docker memory string (e.g. 512m, 1g)"}), 400
+
         try:
             tide.container_cores = float(flask.request.json.get('container_cores'))
         except Exception:
@@ -259,6 +264,7 @@ def api_admin_edit_tide():
 
         tide.container_memory = raw_memory.lower()
         tide.container_swap = raw_swap.lower() if raw_swap else None
+        tide.container_shm = raw_shm.lower() if raw_shm else None
 
         tide.container_network = flask.request.json.get('container_network')
         if not tide.container_network:
@@ -274,6 +280,7 @@ def api_admin_edit_tide():
         tide.container_cores = 1
         tide.container_memory = '512m'
         tide.container_swap = None
+        tide.container_shm = None
 
     try:
         tide.session_time_limit = int(flask.request.json.get('session_time_limit', 0))

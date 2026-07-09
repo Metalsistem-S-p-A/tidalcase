@@ -357,6 +357,8 @@
       "ram": "RAM",
       "swap": "Extra Swap",
       "swapHelp": "Additional swap on top of RAM (e.g. 1g). Leave empty for no swap limit.",
+      "shm": "Shared Memory",
+      "shmHelp": "Size of /dev/shm (e.g. 512m). Too small a value can crash browsers running inside the tide. Leave empty for 512m default.",
       "vncUser": "VNC user",
       "uploadPath": "Upload path",
       "downloadPath": "Download path",
@@ -538,4 +540,3 @@
     "idleTimeout": "Session terminated due to inactivity"
   }
 }
-                          

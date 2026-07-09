@@ -401,6 +401,7 @@ def _request_instance_via_agent(agent, tide: app.models.tide.Tide, lang: str = '
                 mem_limit=tide.container_memory,
                 memswap_limit=tide.container_swap,
                 cpu_shares=int(tide.container_cores * 1024),
+                shm_size=tide.container_shm or "512m",
                 mounts=mounts,
                 config_files=[{
                     "path": "/etc/kasmvnc/kasmvnc.yaml",
