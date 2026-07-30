@@ -1,9 +1,9 @@
 <div class="p-6">
     <div class="mb-6 flex items-center gap-3">
-        <a routerLink="/admin/agents" class="text-surface-500 hover:text-surface-700 dark:hover:text-surface-300">
-            <i class="pi pi-arrow-left"></i>
-        </a>
-        <h1 class="text-3xl font-semibold text-surface-900 dark:text-surface-0 flex-1" translate>admin.agents.detailTitle</h1>
+        <div class="flex-1">
+            <p class="text-sm text-surface-500 mb-0.5" translate>admin.agents.detailTitle</p>
+            <h1 class="text-3xl font-semibold text-surface-900 dark:text-surface-0">{{ agentName() || '—' }}</h1>
+        </div>
         <p-button icon="pi pi-refresh" [outlined]="true" size="small" [loading]="loading()" (onClick)="load()" [pTooltip]="'common.refresh' | translate"></p-button>
     </div>
 
@@ -12,7 +12,7 @@
     }
 
     @if (loading()) {
-        <p-skeleton height="8rem" styleClass="w-full mb-4"></p-skeleton>
+        <p-skeleton height="12rem" styleClass="w-full mb-4"></p-skeleton>
         <p-skeleton height="20rem" styleClass="w-full"></p-skeleton>
     } @else {
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
@@ -21,23 +21,25 @@
                 <p class="text-3xl font-semibold">{{ instances().length }}</p>
             </p-card>
             <p-card>
-                <p class="text-xs font-medium text-surface-500 mb-1">{{ 'admin.agents.avgCpu' | translate }}</p>
-                <p class="text-3xl font-semibold">{{ avgCpu() }}%</p>
-            </p-card>
-            <p-card>
-                <p class="text-xs font-medium text-surface-500 mb-1">{{ 'admin.agents.totalMemUsed' | translate }}</p>
-                <p class="text-3xl font-semibold">{{ totalMemUsedMb() }} MB<span class="text-base text-surface-400 font-normal"> / {{ totalMemoryMb() ?? '—' }} MB</span></p>
-            </p-card>
-        </div>
-
-        @if (instances().length) {
-            <p-card styleClass="mb-6">
-                <p class="text-sm font-medium mb-3">{{ 'admin.agents.memPerInstance' | translate }}</p>
-                <div style="height: 320px">
-                    <p-chart type="bar" [data]="memChartData()" [options]="memChartOptions"></p-chart>
+                <p class="text-xs font-medium text-surface-500 mb-3">{{ 'admin.agents.avgCpu' | translate }}</p>
+                <div class="relative mx-auto" style="height: 140px; width: 140px">
+                    <p-chart type="doughnut" [data]="cpuGaugeData()" [options]="gaugeOptions"></p-chart>
+                    <div class="absolute inset-0 flex items-center justify-center">
+                        <span class="text-2xl font-semibold">{{ avgCpu() }}%</span>
+                    </div>
                 </div>
             </p-card>
-        }
+            <p-card>
+                <p class="text-xs font-medium text-surface-500 mb-3">{{ 'admin.agents.totalMemUsed' | translate }}</p>
+                <div class="relative mx-auto" style="height: 140px; width: 140px">
+                    <p-chart type="doughnut" [data]="ramGaugeData()" [options]="gaugeOptions"></p-chart>
+                    <div class="absolute inset-0 flex flex-col items-center justify-center">
+                        <span class="text-xl font-semibold">{{ totalMemUsedMb() }} MB</span>
+                        <span class="text-xs text-surface-400">/ {{ totalMemoryMb() ?? '—' }} MB</span>
+                    </div>
+                </div>
+            </p-card>
+        </div>
 
         <p-card>
             <p-table [value]="instances()" [tableStyle]="{'min-width': '60rem'}" styleClass="p-datatable-sm">

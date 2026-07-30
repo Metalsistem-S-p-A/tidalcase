@@ -34,6 +34,7 @@ export interface AgentInstanceStat {
 export interface AgentStatsResponse {
     success: boolean;
     error?: string;
+    agent_name?: string;
     total_cores?: number;
     total_memory?: number;
     instances: AgentInstanceStat[];

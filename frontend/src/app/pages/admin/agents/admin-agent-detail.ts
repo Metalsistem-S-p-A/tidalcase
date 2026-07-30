@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
@@ -20,10 +20,23 @@ function fmtBytes(bytes: number): string {
 
 type Severity = 'success' | 'warn' | 'danger';
 
+const SEVERITY_COLOR: Record<Severity, string> = {
+    success: '#22c55e',
+    warn: '#f59e0b',
+    danger: '#ef4444',
+};
+const RING_TRACK_COLOR = 'rgba(148, 163, 184, 0.25)';
+
+function severityFor(pct: number): Severity {
+    if (pct >= 90) return 'danger';
+    if (pct >= 70) return 'warn';
+    return 'success';
+}
+
 @Component({
     selector: 'app-admin-agent-detail',
     standalone: true,
-    imports: [RouterLink, TranslateModule, ButtonModule, CardModule, ChartModule, ProgressBarModule, SkeletonModule, TableModule, TagModule, TooltipModule],
+    imports: [TranslateModule, ButtonModule, CardModule, ChartModule, ProgressBarModule, SkeletonModule, TableModule, TagModule, TooltipModule],
     templateUrl: './admin-agent-detail.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -33,6 +46,7 @@ export class AdminAgentDetail implements OnInit {
 
     readonly loading = signal(true);
     readonly error = signal('');
+    readonly agentName = signal('');
     readonly instances = signal<AgentInstanceStat[]>([]);
     readonly totalCores = signal<number | undefined>(undefined);
     readonly totalMemoryMb = signal<number | undefined>(undefined);
@@ -47,28 +61,41 @@ export class AdminAgentDetail implements OnInit {
         Math.round(this.instances().reduce((s, i) => s + i.mem_usage_bytes, 0) / (1024 * 1024))
     );
 
-    readonly memChartData = computed(() => {
-        const list = [...this.instances()].sort((a, b) => b.mem_usage_bytes - a.mem_usage_bytes);
+    readonly ramUsedPercent = computed(() => {
+        const total = this.totalMemoryMb();
+        if (!total) return 0;
+        return Math.min(Math.round((this.totalMemUsedMb() / total) * 100), 100);
+    });
+
+    readonly cpuGaugeData = computed(() => {
+        const value = Math.min(this.avgCpu(), 100);
         return {
-            labels: list.map(i => i.tide_name || i.container_name),
             datasets: [{
-                label: 'RAM (MB)',
-                data: list.map(i => Math.round(i.mem_usage_bytes / (1024 * 1024))),
-                backgroundColor: '#2a78d6',
-                borderRadius: 4,
-                barThickness: 18,
+                data: [value, 100 - value],
+                backgroundColor: [SEVERITY_COLOR[severityFor(this.avgCpu())], RING_TRACK_COLOR],
+                borderWidth: 0,
             }],
         };
     });
 
-    readonly memChartOptions = {
-        indexAxis: 'y' as const,
+    readonly ramGaugeData = computed(() => {
+        const value = this.ramUsedPercent();
+        return {
+            datasets: [{
+                data: [value, 100 - value],
+                backgroundColor: [SEVERITY_COLOR[severityFor(value)], RING_TRACK_COLOR],
+                borderWidth: 0,
+            }],
+        };
+    });
+
+    readonly gaugeOptions = {
         responsive: true,
         maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
-        scales: {
-            x: { beginAtZero: true },
-            y: { grid: { display: false } },
+        cutout: '75%',
+        plugins: {
+            legend: { display: false },
+            tooltip: { enabled: false },
         },
     };
 
@@ -86,6 +113,7 @@ export class AdminAgentDetail implements OnInit {
             next: (res) => {
                 this.loading.set(false);
                 if (res.success) {
+                    this.agentName.set(res.agent_name || '');
                     this.instances.set(res.instances || []);
                     this.totalCores.set(res.total_cores);
                     this.totalMemoryMb.set(res.total_memory);
@@ -105,9 +133,7 @@ export class AdminAgentDetail implements OnInit {
     }
 
     cpuSeverity(inst: AgentInstanceStat): Severity {
-        if (inst.cpu_percent >= 90) return 'danger';
-        if (inst.cpu_percent >= 70) return 'warn';
-        return 'success';
+        return severityFor(inst.cpu_percent);
     }
 
     memPercent(inst: AgentInstanceStat): number {
@@ -116,10 +142,7 @@ export class AdminAgentDetail implements OnInit {
     }
 
     memSeverity(inst: AgentInstanceStat): Severity {
-        const pct = this.memPercent(inst);
-        if (pct >= 90) return 'danger';
-        if (pct >= 70) return 'warn';
-        return 'success';
+        return severityFor(this.memPercent(inst));
     }
 
     fmtBytes(bytes: number): string {

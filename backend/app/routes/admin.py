@@ -912,6 +912,7 @@ def api_admin_agent_stats(agent_id: str):
 
     return flask.jsonify({
         "success": True,
+        "agent_name": agent.display_name,
         "total_cores": agent.total_cores,
         "total_memory": agent.total_memory,
         "instances": instances,
