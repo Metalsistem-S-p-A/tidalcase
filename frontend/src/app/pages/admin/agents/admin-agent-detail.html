@@ -23,7 +23,7 @@
             <p-card>
                 <p class="text-xs font-medium text-surface-500 mb-3">{{ 'admin.agents.avgCpu' | translate }}</p>
                 <div class="relative mx-auto" style="height: 140px; width: 140px">
-                    <p-chart type="doughnut" [data]="cpuGaugeData()" [options]="gaugeOptions" [style]="{height: '140px', width: '140px', display: 'block'}"></p-chart>
+                    <p-chart type="doughnut" [data]="cpuGaugeData()" [options]="gaugeOptions"></p-chart>
                     <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
                         <span class="text-2xl font-semibold">{{ avgCpu() }}%</span>
                     </div>
@@ -32,7 +32,7 @@
             <p-card>
                 <p class="text-xs font-medium text-surface-500 mb-3">{{ 'admin.agents.totalMemUsed' | translate }}</p>
                 <div class="relative mx-auto" style="height: 140px; width: 140px">
-                    <p-chart type="doughnut" [data]="ramGaugeData()" [options]="gaugeOptions" [style]="{height: '140px', width: '140px', display: 'block'}"></p-chart>
+                    <p-chart type="doughnut" [data]="ramGaugeData()" [options]="gaugeOptions"></p-chart>
                     <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
                         <span class="text-xl font-semibold">{{ totalMemUsedMb() }} MB</span>
                         <span class="text-xs text-surface-400">/ {{ totalMemoryMb() ?? '—' }} MB</span>
