@@ -422,7 +422,18 @@
       "connectionError": "Errore connessione",
       "guacImage": "Immagine Guacamole",
       "guacImagePlaceholder": "tidalcaseweb/tidalcase-guac:latest (vuoto = predefinita)",
-      "guacImageHelp": "Immagine Docker personalizzata per sessioni RDP/VNC/SSH. Lascia vuoto per usare l'immagine predefinita."
+      "guacImageHelp": "Immagine Docker personalizzata per sessioni RDP/VNC/SSH. Lascia vuoto per usare l'immagine predefinita.",
+      "viewStats": "Visualizza utilizzo risorse",
+      "detailTitle": "Utilizzo risorse agent",
+      "runningInstances": "Istanze attive",
+      "avgCpu": "CPU media",
+      "totalMemUsed": "RAM totale usata",
+      "memPerInstance": "RAM per istanza",
+      "user": "Utente",
+      "cpu": "CPU",
+      "network": "Rete (down/up)",
+      "pids": "Processi",
+      "noInstances": "Nessuna istanza attiva su questo agent"
     },
     "storage": {
       "title": "Storage provider",

@@ -1,5 +1,6 @@
 import json
 import os
+import re
 import time
 import socket
 import shutil
@@ -9,6 +10,8 @@ import docker.errors
 import redis as redis_lib
 import celery_tasks.container
 import utils
+
+_INSTANCE_NAME_RE = re.compile(r'^tidalcase-([0-9a-fA-F-]{36})$')
 
 def _redis_client():
     url = os.environ.get('CELERY_BROKER_URL', 'redis://tidalcase-redis:6379/1')
@@ -308,6 +311,63 @@ def container_run():
         "vnc_url": vnc_url,
         "guac_url": guac_url,
     })
+
+def _cpu_percent(stats: dict) -> float:
+    try:
+        cpu = stats['cpu_stats']
+        precpu = stats['precpu_stats']
+        cpu_delta = cpu['cpu_usage']['total_usage'] - precpu['cpu_usage'].get('total_usage', 0)
+        system_delta = cpu.get('system_cpu_usage', 0) - precpu.get('system_cpu_usage', 0)
+        online_cpus = cpu.get('online_cpus') or len(cpu['cpu_usage'].get('percpu_usage') or []) or 1
+        if system_delta > 0 and cpu_delta > 0:
+            return round((cpu_delta / system_delta) * online_cpus * 100.0, 1)
+    except (KeyError, TypeError, ZeroDivisionError):
+        pass
+    return 0.0
+
+
+def _sum_network(stats: dict) -> tuple[int, int]:
+    rx = tx = 0
+    for net in (stats.get('networks') or {}).values():
+        rx += net.get('rx_bytes', 0)
+        tx += net.get('tx_bytes', 0)
+    return rx, tx
+
+
+@bp.get('/containers/stats')
+def containers_stats():
+    """Point-in-time resource usage for all running tide instance containers."""
+    instances = []
+    for container in docker.from_env().containers.list():
+        m = _INSTANCE_NAME_RE.match(container.name)
+        if not m:
+            continue
+        try:
+            stats = container.stats(stream=False)
+        except Exception as e:
+            print(f"[agent] Failed to read stats for '{container.name}': {e}", flush=True)
+            continue
+
+        mem_stats = stats.get('memory_stats') or {}
+        usage = mem_stats.get('usage', 0)
+        detail = mem_stats.get('stats') or {}
+        cache = detail.get('inactive_file', detail.get('cache', 0))
+        rx_bytes, tx_bytes = _sum_network(stats)
+
+        instances.append({
+            "instance_id": m.group(1),
+            "container_name": container.name,
+            "status": container.status,
+            "cpu_percent": _cpu_percent(stats),
+            "mem_usage_bytes": max(usage - cache, 0),
+            "mem_limit_bytes": mem_stats.get('limit', 0),
+            "net_rx_bytes": rx_bytes,
+            "net_tx_bytes": tx_bytes,
+            "pids": (stats.get('pids_stats') or {}).get('current', 0),
+        })
+
+    return flask.jsonify({"ok": True, "instances": instances})
+
 
 @bp.get('/container/<name>')
 def container_exists(name):

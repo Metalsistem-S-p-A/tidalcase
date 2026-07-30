@@ -8,7 +8,7 @@ import app.routes.agent_api
 import app.routes.auth_providers
 import app.routes.users
 
-__version__ = "1.0.0"
+__version__ = "1.0.1"
 
 def create_app():
     flask_app = flask.Flask(__name__)

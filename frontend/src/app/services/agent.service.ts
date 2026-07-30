@@ -17,6 +17,28 @@ export interface Agent {
     api_token?: string;
 }
 
+export interface AgentInstanceStat {
+    instance_id: string;
+    container_name: string;
+    status: string;
+    cpu_percent: number;
+    mem_usage_bytes: number;
+    mem_limit_bytes: number;
+    net_rx_bytes: number;
+    net_tx_bytes: number;
+    pids: number;
+    tide_name?: string;
+    username?: string;
+}
+
+export interface AgentStatsResponse {
+    success: boolean;
+    error?: string;
+    total_cores?: number;
+    total_memory?: number;
+    instances: AgentInstanceStat[];
+}
+
 @Injectable({ providedIn: 'root' })
 export class AgentService {
     private http = inject(HttpClient);
@@ -43,5 +65,9 @@ export class AgentService {
 
     prune(agentId: string): Observable<{ success: boolean; error?: string }> {
         return this.http.post<any>(`/api/admin/agent/${agentId}/prune`, {});
+    }
+
+    getAgentStats(agentId: string): Observable<AgentStatsResponse> {
+        return this.http.get<AgentStatsResponse>(`/api/admin/agent/${agentId}/stats`);
     }
 }

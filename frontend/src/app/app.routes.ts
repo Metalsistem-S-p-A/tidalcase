@@ -36,6 +36,11 @@ export const appRoutes: Routes = [
                 canActivate: [adminGuard]
             },
             {
+                path: 'admin/agents/:id',
+                loadComponent: () => import('./pages/admin/agents/admin-agent-detail').then(m => m.AdminAgentDetail),
+                canActivate: [adminGuard]
+            },
+            {
                 path: 'admin/registry',
                 loadComponent: () => import('./pages/admin/registry/admin-registry').then(m => m.AdminRegistry),
                 canActivate: [adminGuard]

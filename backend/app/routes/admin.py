@@ -868,6 +868,56 @@ def api_admin_test_agent():
     return flask.jsonify({"success": success, "message": message})
 
 
+@admin_bp.get('/agent/<string:agent_id>/stats')
+@app.utils.jwt_validator.jwt_required
+def api_admin_agent_stats(agent_id: str):
+    if not app.utils.permissions.Permissions.check_permission(flask.g.current_user.id, app.utils.permissions.Permissions.ADMIN_PANEL):
+        return flask.jsonify({"success": False, "error": "Unauthorized"}), 403
+
+    agent = app.models.agent.Agent.query.filter_by(id=agent_id).first()
+    if not agent:
+        return flask.jsonify({"success": False, "error": "Agent not found"}), 404
+
+    client = app.utils.docker.get_agent_client(agent)
+    if not client:
+        return flask.jsonify({"success": False, "error": "Agent not configured"}), 400
+
+    try:
+        data = client.get_container_stats()
+    except app.utils.agent_client.AgentError as e:
+        return flask.jsonify({"success": False, "error": str(e)}), 502
+
+    raw_instances = data.get('instances', [])
+    instance_ids = [i['instance_id'] for i in raw_instances]
+    db_instances = app.models.tide.TideInstance.query.filter(
+        app.models.tide.TideInstance.id.in_(instance_ids)
+    ).all() if instance_ids else []
+    instances_by_id = {str(inst.id): inst for inst in db_instances}
+
+    tide_ids = {inst.tide_id for inst in db_instances}
+    tides_by_id = {t.id: t for t in app.models.tide.Tide.query.filter(app.models.tide.Tide.id.in_(tide_ids)).all()} if tide_ids else {}
+    user_ids = {inst.user_id for inst in db_instances}
+    users_by_id = {u.id: u for u in app.models.user.User.query.filter(app.models.user.User.id.in_(user_ids)).all()} if user_ids else {}
+
+    instances = []
+    for raw in raw_instances:
+        inst = instances_by_id.get(raw['instance_id'])
+        tide = tides_by_id.get(inst.tide_id) if inst else None
+        user = users_by_id.get(inst.user_id) if inst else None
+        instances.append({
+            **raw,
+            "tide_name": tide.display_name if tide else None,
+            "username": user.username if user else None,
+        })
+
+    return flask.jsonify({
+        "success": True,
+        "total_cores": agent.total_cores,
+        "total_memory": agent.total_memory,
+        "instances": instances,
+    })
+
+
 @admin_bp.post('/agent/<string:agent_id>/healthcheck')
 @app.utils.jwt_validator.jwt_required
 def api_admin_agent_healthcheck(agent_id: str):

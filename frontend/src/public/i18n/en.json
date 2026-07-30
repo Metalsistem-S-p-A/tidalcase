@@ -422,7 +422,18 @@
       "connectionError": "Connection error",
       "guacImage": "Guacamole image",
       "guacImagePlaceholder": "tidalcaseweb/tidalcase-guac:latest (leave empty for default)",
-      "guacImageHelp": "Custom Docker image for RDP/VNC/SSH sessions. Leave empty to use the built-in default."
+      "guacImageHelp": "Custom Docker image for RDP/VNC/SSH sessions. Leave empty to use the built-in default.",
+      "viewStats": "View resource usage",
+      "detailTitle": "Agent resource usage",
+      "runningInstances": "Running instances",
+      "avgCpu": "Average CPU",
+      "totalMemUsed": "Total RAM used",
+      "memPerInstance": "RAM per instance",
+      "user": "User",
+      "cpu": "CPU",
+      "network": "Network (down/up)",
+      "pids": "Processes",
+      "noInstances": "No running instances on this agent"
     },
     "storage": {
       "title": "Storage providers",

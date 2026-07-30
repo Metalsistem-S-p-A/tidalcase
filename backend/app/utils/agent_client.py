@@ -93,6 +93,9 @@ class AgentHTTPClient:
             'session_time_limit_s': session_time_limit_s,
         }, timeout=60)
 
+    def get_container_stats(self) -> dict:
+        return self._get('/containers/stats', timeout=30)
+
     def remove_container(self, name: str) -> None:
         self._delete(f'/container/{name}')
 

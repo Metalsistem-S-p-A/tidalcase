@@ -1,4 +1,3 @@
-set GITHUB_TOKEN="***REMOVED***"
 set REG="ghcr.io/metalsistem-s-p-a"
 ::set REG="tidalcase.metalsistem.com:5443"
 

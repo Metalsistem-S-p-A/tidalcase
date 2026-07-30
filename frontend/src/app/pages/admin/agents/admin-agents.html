@@ -57,6 +57,7 @@
                         <td class="text-sm text-surface-500">{{ a.total_cores }} {{ 'admin.tides.cpu' | translate }} / {{ a.total_memory }} {{ 'admin.tides.ram' | translate }}</td>
                         <td>
                             <div class="flex gap-1 justify-end">
+                                <p-button icon="pi pi-chart-bar" severity="secondary" [outlined]="true" size="small" [pTooltip]="'admin.agents.viewStats' | translate" [routerLink]="['/admin/agents', a.id]"></p-button>
                                 <p-button icon="pi pi-pencil" severity="secondary" [outlined]="true" size="small" [pTooltip]="'common.edit' | translate" (onClick)="openEdit(a)"></p-button>
                                 <p-button icon="pi pi-trash" severity="danger" [outlined]="true" size="small" [pTooltip]="'common.delete' | translate" (onClick)="confirmDelete(a)"></p-button>
                             </div>

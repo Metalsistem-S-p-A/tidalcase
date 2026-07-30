@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject, OnInit, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -20,7 +21,7 @@ import { Agent, AgentService } from '../../../services/agent.service';
 @Component({
     selector: 'app-admin-agents',
     standalone: true,
-    imports: [FormsModule, TableModule, ButtonModule, TagModule, SkeletonModule, CardModule, ToastModule, ConfirmDialogModule, DialogModule, InputTextModule, CheckboxModule, SelectModule, TranslateModule, TooltipModule],
+    imports: [FormsModule, RouterLink, TableModule, ButtonModule, TagModule, SkeletonModule, CardModule, ToastModule, ConfirmDialogModule, DialogModule, InputTextModule, CheckboxModule, SelectModule, TranslateModule, TooltipModule],
     providers: [MessageService, ConfirmationService],
     templateUrl: './admin-agents.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
