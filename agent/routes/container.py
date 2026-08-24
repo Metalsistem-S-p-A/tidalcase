@@ -4,6 +4,7 @@ import re
 import time
 import socket
 import shutil
+from concurrent.futures import ThreadPoolExecutor
 import psutil
 import flask
 import docker.errors
@@ -334,37 +335,52 @@ def _sum_network(stats: dict) -> tuple[int, int]:
     return rx, tx
 
 
+def _stats_for(container, m):
+    try:
+        stats = container.stats(stream=False)
+    except Exception as e:
+        print(f"[agent] Failed to read stats for '{container.name}': {e}", flush=True)
+        return None
+
+    mem_stats = stats.get('memory_stats') or {}
+    usage = mem_stats.get('usage', 0)
+    detail = mem_stats.get('stats') or {}
+    cache = detail.get('inactive_file', detail.get('cache', 0))
+    rx_bytes, tx_bytes = _sum_network(stats)
+
+    return {
+        "instance_id": m.group(1),
+        "container_name": container.name,
+        "status": container.status,
+        "cpu_percent": _cpu_percent(stats),
+        "mem_usage_bytes": max(usage - cache, 0),
+        "mem_limit_bytes": mem_stats.get('limit', 0),
+        "net_rx_bytes": rx_bytes,
+        "net_tx_bytes": tx_bytes,
+        "pids": (stats.get('pids_stats') or {}).get('current', 0),
+    }
+
+
 @bp.get('/containers/stats')
 def containers_stats():
-    """Point-in-time resource usage for all running tide instance containers."""
-    instances = []
+    """Point-in-time resource usage for all running tide instance containers.
+
+    Container stats calls are dispatched in parallel — a serial loop would
+    add ~1-2s per container because Docker's stats API samples twice to
+    compute CPU%, easily exceeding the manager's HTTP timeout on busy hosts.
+    """
+    matched = []
     for container in docker.from_env().containers.list():
         m = _INSTANCE_NAME_RE.match(container.name)
-        if not m:
-            continue
-        try:
-            stats = container.stats(stream=False)
-        except Exception as e:
-            print(f"[agent] Failed to read stats for '{container.name}': {e}", flush=True)
-            continue
+        if m:
+            matched.append((container, m))
 
-        mem_stats = stats.get('memory_stats') or {}
-        usage = mem_stats.get('usage', 0)
-        detail = mem_stats.get('stats') or {}
-        cache = detail.get('inactive_file', detail.get('cache', 0))
-        rx_bytes, tx_bytes = _sum_network(stats)
-
-        instances.append({
-            "instance_id": m.group(1),
-            "container_name": container.name,
-            "status": container.status,
-            "cpu_percent": _cpu_percent(stats),
-            "mem_usage_bytes": max(usage - cache, 0),
-            "mem_limit_bytes": mem_stats.get('limit', 0),
-            "net_rx_bytes": rx_bytes,
-            "net_tx_bytes": tx_bytes,
-            "pids": (stats.get('pids_stats') or {}).get('current', 0),
-        })
+    instances = []
+    if matched:
+        with ThreadPoolExecutor(max_workers=min(16, len(matched))) as ex:
+            for result in ex.map(lambda item: _stats_for(*item), matched):
+                if result is not None:
+                    instances.append(result)
 
     return flask.jsonify({"ok": True, "instances": instances})
 

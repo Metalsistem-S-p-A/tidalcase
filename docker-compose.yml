@@ -1,25 +1,10 @@
 ---
-# Tidalcase — public reference docker-compose
-#
-# All secrets, hostnames and image references are pulled from a `.env` file
-# next to this compose file. Copy `.env.example` to `.env` and fill in your
-# values before running `docker compose up -d`.
-#
-# Optional profiles (enable with `--profile <name>`):
-#   db        → bundled PostgreSQL (otherwise use any external DB via DATABASE_URL)
-#   auth      → Authentik SSO (server + worker)
-#   registry  → bundled Docker registry for tide images
-#   agent     → run a Tidalcase agent on this host (see docs/agents.md)
-#
-# Default: `docker compose up -d` brings up the manager stack
-# (traefik + backend + frontend + redis + celery worker/beat).
-
 services:
-
   tidalcase-traefik:
+    profiles: [manager]
     image: traefik:v3
     container_name: tidalcase-traefik
-    restart: unless-stopped
+    restart: on-failure:5
     environment:
       TZ: "Europe/Rome"
     command:
@@ -31,9 +16,9 @@ services:
       - --entrypoints.authentik.address=:9443
       - --entrypoints.registry.address=:5443
       - --entrypoints.registry.transport.respondingTimeouts.readTimeout=0
-      - --entrypoints.registry-ui.address=:6443
       - --entrypoints.web.http.redirections.entrypoint.to=websecure
       - --entrypoints.web.http.redirections.entrypoint.scheme=https
+      - --entrypoints.registry-ui.address=:6443
     ports:
       - "80:80"
       - "443:443"
@@ -45,11 +30,11 @@ services:
       - /etc/tidalcase/certs:/certs:ro
     networks:
       - tidalcase-network
-
   tidalcase-backend:
-    image: ${TIDALCASE_BACKEND_IMAGE:-ghcr.io/metalsistem-s-p-a/tidalcase-backend:latest}
+    profiles: [manager]
+    image: ghcr.io/metalsistem-s-p-a/tidalcase-backend:latest
     container_name: tidalcase-backend
-    restart: unless-stopped
+    restart: on-failure:5
     volumes:
       - tidalcase-data:/app/data
       - /var/run/docker.sock:/var/run/docker.sock
@@ -65,11 +50,11 @@ services:
       - tidalcase-network
     depends_on:
       - tidalcase-redis
-
   tidalcase-frontend:
-    image: ${TIDALCASE_FRONTEND_IMAGE:-ghcr.io/metalsistem-s-p-a/tidalcase-frontend:latest}
+    profiles: [manager]
+    image: ghcr.io/metalsistem-s-p-a/tidalcase-frontend:latest
     container_name: tidalcase-frontend
-    restart: unless-stopped
+    restart: on-failure:5
     labels:
       - traefik.enable=true
       - traefik.http.routers.tidalcase.rule=Host(`${DOMAIN}`)
@@ -80,22 +65,22 @@ services:
       - tidalcase-backend
     networks:
       - tidalcase-network
-
   tidalcase-redis:
+    profiles: [manager]
     image: redis:8-alpine
     container_name: tidalcase-redis
-    restart: unless-stopped
+    restart: on-failure:5
     environment:
       TZ: "Europe/Rome"
     volumes:
       - tidalcase-redis:/data
     networks:
       - tidalcase-network
-
   tidalcase-celery-worker:
-    image: ${TIDALCASE_BACKEND_IMAGE:-ghcr.io/metalsistem-s-p-a/tidalcase-backend:latest}
+    profiles: [manager]
+    image: ghcr.io/metalsistem-s-p-a/tidalcase-backend:latest
     container_name: tidalcase-celery-worker
-    restart: unless-stopped
+    restart: on-failure:5
     volumes:
       - tidalcase-data:/app/data
       - /var/run/docker.sock:/var/run/docker.sock
@@ -110,11 +95,11 @@ services:
       - tidalcase-network
     depends_on:
       - tidalcase-redis
-
   tidalcase-celery-beat:
-    image: ${TIDALCASE_BACKEND_IMAGE:-ghcr.io/metalsistem-s-p-a/tidalcase-backend:latest}
+    profiles: [manager]
+    image: ghcr.io/metalsistem-s-p-a/tidalcase-backend:latest
     container_name: tidalcase-celery-beat
-    restart: unless-stopped
+    restart: on-failure:5
     environment:
       TZ: "Europe/Rome"
       CELERY_BROKER_URL: redis://tidalcase-redis:6379/0
@@ -123,7 +108,6 @@ services:
       - tidalcase-network
     depends_on:
       - tidalcase-redis
-
   # --- Optional: PostgreSQL (--profile db) ---
   tidalcase-postgres:
     profiles: [db]
@@ -139,7 +123,6 @@ services:
       - tidalcase-postgres:/var/lib/postgresql
     networks:
       - tidalcase-network
-
   # --- Optional: Authentik SSO (--profile auth) ---
   tidalcase-authentik:
     profiles: [auth]
@@ -165,8 +148,7 @@ services:
       - tidalcase-redis
     networks:
       - tidalcase-network
-
-  authentik-worker:
+  tidalcase-authentik-worker:
     profiles: [auth]
     image: ghcr.io/goauthentik/server:latest
     container_name: tidalcase-authentik-worker
@@ -184,10 +166,9 @@ services:
       - tidalcase-redis
     networks:
       - tidalcase-network
-
   tidalcase-registry:
     profiles: [registry]
-    image: ${TIDALCASE_REGISTRY_IMAGE:-ghcr.io/metalsistem-s-p-a/tidalcase-registry:latest}
+    image: ghcr.io/metalsistem-s-p-a/tidalcase-registry:latest
     container_name: tidalcase-registry
     restart: unless-stopped
     environment:
@@ -196,7 +177,7 @@ services:
       REGISTRY_NAME: ${REGISTRY_NAME:-Tidalcase Registry}
       REGISTRY_IMAGE_PREFIX: ${REGISTRY_IMAGE_PREFIX:-}
       ICONS_DIR: /icons
-      REGISTRY_STORAGE_DELETE_ENABLED: "true"
+      REGISTRY_STORAGE_DELETE_ENABLED: true
     volumes:
       - registry_data:/var/lib/registry
       - /etc/tidalcase/registry/icons:/icons:ro
@@ -212,9 +193,7 @@ services:
       - traefik.http.routers.registry-v2.rule=Host(`${DOMAIN}`) && PathPrefix(`/v2`)
       - traefik.http.routers.registry-v2.entrypoints=registry
       - traefik.http.routers.registry-v2.tls=true
-      - traefik.http.routers.registry-v2.service=registry-v2
       - traefik.http.services.registry-v2.loadbalancer.server.port=5001
-
   tidalcase-registry-ui:
     profiles: [registry]
     image: joxit/docker-registry-ui:latest
@@ -240,10 +219,9 @@ services:
       - tidalcase-registry
     networks:
       - tidalcase-network
-
   tidalcase-agent:
     profiles: [agent]
-    image: ${TIDALCASE_AGENT_IMAGE:-ghcr.io/metalsistem-s-p-a/tidalcase-agent:latest}
+    image: ghcr.io/metalsistem-s-p-a/tidalcase-agent:latest
     container_name: tidalcase-agent
     restart: unless-stopped
     user: "root"
@@ -256,19 +234,20 @@ services:
     environment: &agent-env
       FLASK_DEBUG: 0
       TZ: "Europe/Rome"
-      TIDALCASE_JOIN_TOKEN: ${TIDALCASE_JOIN_TOKEN}
-      TIDALCASE_MANAGER_URL: ${TIDALCASE_MANAGER_URL}
-      TIDALCASE_AGENT_URL: ${TIDALCASE_AGENT_URL}
+      TIDALCASE_JOIN_TOKEN: "h5QvYcfjwO6i4UYvWysEm0op222HPB3lRE53wD0XJnC"
+      TIDALCASE_MANAGER_URL: "https://tidalcase.metalsistem.com"
+      TIDALCASE_AGENT_URL: "${TIDALCASE_AGENT_URL}"
       TIDALCASE_CONFIG_HOST_DIR: "/etc/tidalcase/configs"
       TIDALCASE_CERTS_HOST_DIR: "/etc/tidalcase/certs"
-      CELERY_BROKER_URL: "redis://tidalcase-redis:6379/1"
-      CELERY_RESULT_BACKEND: "redis://tidalcase-redis:6379/1"
+      CELERY_BROKER_URL: "redis://tidalcase-agent-redis:6379/0"
+      CELERY_RESULT_BACKEND: "redis://tidalcase-agent-redis:6379/0"
     networks:
       - tidalcase-network
-
+    depends_on:
+      - tidalcase-agent-redis
   tidalcase-agent-nginx:
     profiles: [agent]
-    image: ${TIDALCASE_AGENT_NGINX_IMAGE:-ghcr.io/metalsistem-s-p-a/tidalcase-agent-nginx:latest}
+    image: ghcr.io/metalsistem-s-p-a/tidalcase-agent-nginx:latest
     container_name: tidalcase-agent-nginx
     restart: unless-stopped
     environment:
@@ -282,10 +261,18 @@ services:
       - tidalcase-network
     depends_on:
       - tidalcase-agent
-
+  tidalcase-agent-redis:
+    profiles: [agent]
+    image: redis:8-alpine
+    container_name: tidalcase-agent-redis
+    restart: unless-stopped
+    environment:
+      TZ: "Europe/Rome"
+    networks:
+      - tidalcase-network
   tidalcase-agent-celery-worker:
     profiles: [agent]
-    image: ${TIDALCASE_AGENT_IMAGE:-ghcr.io/metalsistem-s-p-a/tidalcase-agent:latest}
+    image: ghcr.io/metalsistem-s-p-a/tidalcase-agent:latest
     container_name: tidalcase-agent-celery-worker
     restart: unless-stopped
     user: "root"
@@ -294,15 +281,14 @@ services:
       - agent-data:/agent/data
     environment:
       <<: *agent-env
-    command: celery -A app.celery_app worker --loglevel=info --concurrency=4 -Q monitor
+    command: celery -A app.celery_app worker --loglevel=info --concurrency=4 -Q celery,monitor
     networks:
       - tidalcase-network
     depends_on:
-      - tidalcase-redis
-
+      - tidalcase-agent-redis
   tidalcase-agent-celery-beat:
     profiles: [agent]
-    image: ${TIDALCASE_AGENT_IMAGE:-ghcr.io/metalsistem-s-p-a/tidalcase-agent:latest}
+    image: ghcr.io/metalsistem-s-p-a/tidalcase-agent:latest
     container_name: tidalcase-agent-celery-beat
     restart: unless-stopped
     user: "root"
@@ -314,12 +300,10 @@ services:
     networks:
       - tidalcase-network
     depends_on:
-      - tidalcase-redis
-
+      - tidalcase-agent-redis
 networks:
   tidalcase-network:
     name: tidalcase-network
-
 volumes:
   tidalcase-data:
   tidalcase-redis:

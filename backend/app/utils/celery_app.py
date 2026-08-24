@@ -17,12 +17,17 @@ def make_celery(app):
         task_ignore_result=True,
         imports=[
             'app.celery_tasks.agent_monitor',
+            'app.celery_tasks.instance_cleanup',
         ]
     )
 
     celery_instance.conf.beat_schedule = {
         'run-monitor-every-5-minutes': {
             'task': 'app.celery_tasks.agent_monitor.agent_monitor_task',
+            'schedule': 300.0,
+        },
+        'cleanup-orphan-instances-every-5-minutes': {
+            'task': 'app.celery_tasks.instance_cleanup.cleanup_orphan_instances_task',
             'schedule': 300.0,
         },
     }
