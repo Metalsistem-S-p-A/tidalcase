@@ -18,6 +18,10 @@ def create_app():
         'DATABASE_URL', 'sqlite:///data/tidalcase.db'
     )
     flask_app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+    flask_app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
+        'pool_pre_ping': True,   # detect dead connections and reconnect
+        'pool_recycle': 300,     # recycle connections idle > 5 min
+    }
 
     app.utils.extensions.db.init_app(flask_app)
     app.utils.extensions.bcrypt.init_app(flask_app)

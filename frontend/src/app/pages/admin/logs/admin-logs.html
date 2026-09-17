@@ -32,6 +32,7 @@
             </p-table>
 
             <p-paginator
+                [first]="(page() - 1) * perPage()"
                 [rows]="perPage()"
                 [totalRecords]="totalRecords()"
                 [rowsPerPageOptions]="[25, 50, 100]"

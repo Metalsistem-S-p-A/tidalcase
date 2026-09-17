@@ -220,20 +220,23 @@ def container_run():
     except docker.errors.ImageNotFound:
         image_exists = False
 
-    # If image exists locally, check whether we just finished a pull for it.
-    # A fresh "done" entry in Redis (TTL 300 s) means the pull just completed
-    # and the local image is up to date — proceed to run. In all other cases
-    # (no entry, expired, or still pulling) queue a new pull so stale :latest
-    # images are always refreshed before the container starts.
+    # A specific tag (e.g. ":1.0") is immutable — the local image is what
+    # will be run and no refresh is needed. For ":latest" (or when no tag is
+    # given, which docker treats as ":latest"), fall back to the previous
+    # refresh-via-Redis behaviour so mutable tags stay current.
     if image_exists:
-        try:
-            raw = _redis_client().get(f"tidalcase:pull:{image}")
-            if raw and json.loads(raw).get('status') == 'done':
-                pass  # fresh pull — image is current, fall through to run
-            else:
-                image_exists = False  # treat as missing to trigger pull
-        except Exception:
-            pass  # Redis unavailable — run with whatever is local
+        tag_part = image.rsplit('/', 1)[-1]
+        tag = tag_part.rsplit(':', 1)[-1] if ':' in tag_part else 'latest'
+        if tag == 'latest':
+            try:
+                raw = _redis_client().get(f"tidalcase:pull:{image}")
+                if raw and json.loads(raw).get('status') == 'done':
+                    pass  # fresh pull — image is current, fall through to run
+                else:
+                    image_exists = False  # treat as missing to trigger pull
+            except Exception:
+                pass  # Redis unavailable — run with whatever is local
+        # else: immutable tag, fall through to run
 
     if not image_exists:
         _cleanup_config_files(name)
