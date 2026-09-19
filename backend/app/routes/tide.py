@@ -78,7 +78,6 @@ def _agent_free_score(agent: app.models.agent.Agent, tide: app.models.tide.Tide)
     avail_cores = total_cores * max(0.0, 1.0 - cpu_pct / 100.0)
 
     tide_mem_mb = _parse_mem_mb(tide.container_memory)
-    app.utils.logger.log("DEBUG", f"_agent_free_score: agent='{agent.display_name}' avail={avail_cores:.1f}c/{avail_memory}MB cpu={cpu_pct}% tide_needs={tide.container_cores}c/{tide.container_memory}")
     if avail_memory < tide_mem_mb:
         return None
     if avail_cores < (tide.container_cores or 0):
