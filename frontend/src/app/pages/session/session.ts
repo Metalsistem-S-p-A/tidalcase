@@ -30,6 +30,7 @@ export class SessionPage implements OnInit, OnDestroy {
     private instanceId = '';
     private agentBase = '';
     private clipboardInputTimer?: ReturnType<typeof setTimeout>;
+    private connectTimeout?: ReturnType<typeof setTimeout>;
 
     canAudio = signal(false);
     canUpload = signal(false);
@@ -112,6 +113,7 @@ export class SessionPage implements OnInit, OnDestroy {
     private onMessage = (e: MessageEvent) => {
         if (e.data?.action == 'connection_state') {
             if (e.data?.value == 'connected') {
+                clearTimeout(this.connectTimeout);
                 this.progress.set(this.translateService.instant("session.connected"));
                 this.connected.set(true);
                 this._postToVnc({ action: 'control_displays' });
@@ -272,14 +274,26 @@ export class SessionPage implements OnInit, OnDestroy {
                     ? (rawUrl.includes('?') ? `${rawUrl}&view_only=true` : `${rawUrl}?view_only=true`)
                     : rawUrl;
                 this.iframeUrl.set(this.sanitizer.bypassSecurityTrustResourceUrl(url));
+                this.armConnectTimeout();
             }
         }
+    }
+
+    private armConnectTimeout() {
+        // Watchdog: if the VNC iframe never signals `connection_state=connected`
+        // within 30 s (agent unreachable, container gone, cert lost, …) fall
+        // back to the dashboard instead of leaving the loading modal up forever.
+        clearTimeout(this.connectTimeout);
+        this.connectTimeout = setTimeout(() => {
+            if (!this.connected()) this.disconnect();
+        }, 30000);
     }
 
     ngOnDestroy() {
         window.removeEventListener('message', this.onMessage);
         clearTimeout(this.clipboardInputTimer);
         clearTimeout(this.tabHideTimer);
+        clearTimeout(this.connectTimeout);
         document.removeEventListener('fullscreenchange', this.onFullscreenChange);
         this.stopAudio();
         this.titleService.setTitle(this.defaultTitle);
