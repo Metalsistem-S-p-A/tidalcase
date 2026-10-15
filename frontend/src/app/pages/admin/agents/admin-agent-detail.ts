@@ -1,13 +1,15 @@
-import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnDestroy, OnInit, computed, effect, inject, signal } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import { TranslateModule } from '@ngx-translate/core';
+import { Subscription, interval } from 'rxjs';
 import { ButtonModule } from 'primeng/button';
 import { CardModule } from 'primeng/card';
-import { ChartModule } from 'primeng/chart';
 import { ProgressBarModule } from 'primeng/progressbar';
 import { SkeletonModule } from 'primeng/skeleton';
 import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
+import { ToggleButtonModule } from 'primeng/togglebutton';
 import { TooltipModule } from 'primeng/tooltip';
 import { AgentInstanceStat, AgentService } from '../../../services/agent.service';
 
@@ -25,7 +27,6 @@ const SEVERITY_COLOR: Record<Severity, string> = {
     warn: '#f59e0b',
     danger: '#ef4444',
 };
-const RING_TRACK_COLOR = 'rgba(148, 163, 184, 0.25)';
 
 function severityFor(pct: number): Severity {
     if (pct >= 90) return 'danger';
@@ -33,14 +34,16 @@ function severityFor(pct: number): Severity {
     return 'success';
 }
 
+const LIVE_REFRESH_MS = 2500;
+
 @Component({
     selector: 'app-admin-agent-detail',
     standalone: true,
-    imports: [TranslateModule, ButtonModule, CardModule, ChartModule, ProgressBarModule, SkeletonModule, TableModule, TagModule, TooltipModule],
+    imports: [FormsModule, TranslateModule, ButtonModule, CardModule, ProgressBarModule, SkeletonModule, TableModule, TagModule, ToggleButtonModule, TooltipModule],
     templateUrl: './admin-agent-detail.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class AdminAgentDetail implements OnInit {
+export class AdminAgentDetail implements OnInit, OnDestroy {
     private readonly route = inject(ActivatedRoute);
     private readonly service = inject(AgentService);
 
@@ -50,6 +53,7 @@ export class AdminAgentDetail implements OnInit {
     readonly instances = signal<AgentInstanceStat[]>([]);
     readonly totalCores = signal<number | undefined>(undefined);
     readonly totalMemoryMb = signal<number | undefined>(undefined);
+    readonly live = signal(false);
 
     readonly avgCpu = computed(() => {
         const list = this.instances();
@@ -67,47 +71,39 @@ export class AdminAgentDetail implements OnInit {
         return Math.min(Math.round((this.totalMemUsedMb() / total) * 100), 100);
     });
 
-    readonly cpuGaugeData = computed(() => {
-        const value = Math.min(this.avgCpu(), 100);
-        return {
-            datasets: [{
-                data: [value, 100 - value],
-                backgroundColor: [SEVERITY_COLOR[severityFor(this.avgCpu())], RING_TRACK_COLOR],
-                borderWidth: 0,
-            }],
-        };
-    });
-
-    readonly ramGaugeData = computed(() => {
-        const value = this.ramUsedPercent();
-        return {
-            datasets: [{
-                data: [value, 100 - value],
-                backgroundColor: [SEVERITY_COLOR[severityFor(value)], RING_TRACK_COLOR],
-                borderWidth: 0,
-            }],
-        };
-    });
-
-    readonly gaugeOptions = {
-        responsive: true,
-        maintainAspectRatio: false,
-        cutout: '75%',
-        plugins: {
-            legend: { display: false },
-            tooltip: { enabled: false },
-        },
-    };
+    readonly cpuColor = computed(() => SEVERITY_COLOR[severityFor(this.avgCpu())]);
+    readonly ramColor = computed(() => SEVERITY_COLOR[severityFor(this.ramUsedPercent())]);
 
     private agentId = '';
+    private liveSub?: Subscription;
+
+    constructor() {
+        // Start/stop the auto-refresh loop whenever the "live" toggle flips.
+        effect(() => {
+            const on = this.live();
+            this.stopLive();
+            if (on) {
+                this.liveSub = interval(LIVE_REFRESH_MS).subscribe(() => this.load(true));
+            }
+        });
+    }
 
     ngOnInit(): void {
         this.agentId = this.route.snapshot.paramMap.get('id') || '';
         this.load();
     }
 
-    load(): void {
-        this.loading.set(true);
+    ngOnDestroy(): void {
+        this.stopLive();
+    }
+
+    private stopLive(): void {
+        this.liveSub?.unsubscribe();
+        this.liveSub = undefined;
+    }
+
+    load(silent = false): void {
+        if (!silent) this.loading.set(true);
         this.error.set('');
         this.service.getAgentStats(this.agentId).subscribe({
             next: (res) => {
@@ -117,16 +113,18 @@ export class AdminAgentDetail implements OnInit {
                     this.instances.set(res.instances || []);
                     this.totalCores.set(res.total_cores);
                     this.totalMemoryMb.set(res.total_memory);
-                } else {
+                } else if (!silent) {
                     this.error.set(res.error || 'Error');
                 }
             },
             error: (err) => {
                 this.loading.set(false);
-                this.error.set(err?.error?.error || 'Connection error');
+                if (!silent) this.error.set(err?.error?.error || 'Connection error');
             },
         });
     }
+
+    trackInstance = (_: number, item: AgentInstanceStat) => item.instance_id;
 
     cpuBarValue(inst: AgentInstanceStat): number {
         return Math.min(inst.cpu_percent, 100);

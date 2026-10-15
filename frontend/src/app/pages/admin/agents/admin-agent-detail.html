@@ -4,14 +4,17 @@
             <p class="text-sm text-surface-500 mb-0.5" translate>admin.agents.detailTitle</p>
             <h1 class="text-3xl font-semibold text-surface-900 dark:text-surface-0">{{ agentName() || '—' }}</h1>
         </div>
-        <p-button icon="pi pi-refresh" [outlined]="true" size="small" [loading]="loading()" (onClick)="load()" [pTooltip]="'common.refresh' | translate"></p-button>
+        <div class="flex items-center gap-2">
+            <p-togglebutton [(ngModel)]="live" onLabel="LIVE" offLabel="LIVE" onIcon="pi pi-circle-fill" offIcon="pi pi-circle" styleClass="h-9 text-xs"></p-togglebutton>
+            <p-button icon="pi pi-refresh" [outlined]="true" size="small" [loading]="loading()" (onClick)="load()" [pTooltip]="'common.refresh' | translate"></p-button>
+        </div>
     </div>
 
     @if (error()) {
         <div class="mb-4 p-3 rounded-lg bg-red-50 dark:bg-red-950 text-red-600 dark:text-red-400 text-sm">{{ error() }}</div>
     }
 
-    @if (loading()) {
+    @if (loading() && !instances().length) {
         <p-skeleton height="12rem" styleClass="w-full mb-4"></p-skeleton>
         <p-skeleton height="20rem" styleClass="w-full"></p-skeleton>
     } @else {
@@ -22,18 +25,24 @@
             </p-card>
             <p-card>
                 <p class="text-xs font-medium text-surface-500 mb-3">{{ 'admin.agents.avgCpu' | translate }}</p>
-                <div class="relative mx-auto" style="height: 140px; width: 140px">
-                    <p-chart type="doughnut" [data]="cpuGaugeData()" [options]="gaugeOptions"></p-chart>
-                    <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+                <div class="relative mx-auto flex items-center justify-center" style="height: 140px; width: 140px">
+                    <svg viewBox="0 0 36 36" class="w-full h-full -rotate-90">
+                        <circle cx="18" cy="18" r="15.9155" fill="none" stroke="rgba(148,163,184,0.25)" stroke-width="3"></circle>
+                        <circle cx="18" cy="18" r="15.9155" fill="none" [attr.stroke]="cpuColor()" stroke-width="3" stroke-linecap="round" [attr.stroke-dasharray]="avgCpu() + ' 100'"></circle>
+                    </svg>
+                    <div class="absolute inset-0 flex items-center justify-center">
                         <span class="text-2xl font-semibold">{{ avgCpu() }}%</span>
                     </div>
                 </div>
             </p-card>
             <p-card>
                 <p class="text-xs font-medium text-surface-500 mb-3">{{ 'admin.agents.totalMemUsed' | translate }}</p>
-                <div class="relative mx-auto" style="height: 140px; width: 140px">
-                    <p-chart type="doughnut" [data]="ramGaugeData()" [options]="gaugeOptions"></p-chart>
-                    <div class="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                <div class="relative mx-auto flex items-center justify-center" style="height: 140px; width: 140px">
+                    <svg viewBox="0 0 36 36" class="w-full h-full -rotate-90">
+                        <circle cx="18" cy="18" r="15.9155" fill="none" stroke="rgba(148,163,184,0.25)" stroke-width="3"></circle>
+                        <circle cx="18" cy="18" r="15.9155" fill="none" [attr.stroke]="ramColor()" stroke-width="3" stroke-linecap="round" [attr.stroke-dasharray]="ramUsedPercent() + ' 100'"></circle>
+                    </svg>
+                    <div class="absolute inset-0 flex flex-col items-center justify-center">
                         <span class="text-xl font-semibold">{{ totalMemUsedMb() }} MB</span>
                         <span class="text-xs text-surface-400">/ {{ totalMemoryMb() ?? '—' }} MB</span>
                     </div>
@@ -42,7 +51,7 @@
         </div>
 
         <p-card>
-            <p-table [value]="instances()" [tableStyle]="{'min-width': '60rem'}" styleClass="p-datatable-sm">
+            <p-table [value]="instances()" [tableStyle]="{'min-width': '60rem'}" styleClass="p-datatable-sm" dataKey="instance_id" rowTrackBy="trackInstance">
                 <ng-template #header>
                     <tr>
                         <th>{{ 'menu.tides' | translate }}</th>
