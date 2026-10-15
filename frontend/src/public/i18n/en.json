@@ -393,7 +393,18 @@
       "open_mode_user": "User choice",
       "open_mode_new_tab": "New tab",
       "open_mode_same_tab": "Same tab",
-      "open_mode_new_window": "New window"
+      "open_mode_new_window": "New window",
+      "env": {
+        "subtitle": "Environment variables",
+        "open": "Environment variables",
+        "key": "Key",
+        "value": "Value",
+        "addCustom": "Add row",
+        "addPreset": "Add KasmVNC preset...",
+        "addPresetTooltip": "Add selected preset",
+        "empty": "No environment variables set for this tide.",
+        "hint": "These variables are passed to the container on launch. VNC_PW, DISPLAY, VNC_USER and locale/TZ are always enforced at runtime to keep the session working."
+      }
     },
     "agents": {
       "editTitle": "Edit agent",

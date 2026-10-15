@@ -189,7 +189,8 @@ def api_admin_tides():
             "upload_path": tide.upload_path or '',
             "download_path": tide.download_path or '',
             'open_mode': tide.open_mode or 'user',
-            'connection_settings': tide.connection_settings or {}
+            'connection_settings': tide.connection_settings or {},
+            'env': [{'key': ev.key, 'value': ev.value} for ev in (tide.env_vars or [])],
         })
 
     return flask.jsonify(response)
@@ -1002,6 +1003,54 @@ def api_admin_delete_storage_provider():
     app.utils.extensions.db.session.delete(provider)
     app.utils.extensions.db.session.commit()
     return flask.jsonify({"success": True})
+
+
+
+@admin_bp.get('/tide/<string:tide_id>/env')
+@app.utils.jwt_validator.jwt_required
+def api_admin_get_tide_env(tide_id: str):
+    if not app.utils.permissions.Permissions.check_permission(flask.g.current_user.id, app.utils.permissions.Permissions.EDIT_TIDES):
+        return flask.jsonify({"success": False, "error": "Unauthorized"}), 403
+    tide = app.models.tide.Tide.query.filter_by(id=tide_id).first()
+    if not tide:
+        return flask.jsonify({"success": False, "error": "Tide not found"}), 404
+    return flask.jsonify({
+        "success": True,
+        "env": [{"key": ev.key, "value": ev.value} for ev in (tide.env_vars or [])],
+    })
+
+
+@admin_bp.put('/tide/<string:tide_id>/env')
+@app.utils.jwt_validator.jwt_required
+def api_admin_save_tide_env(tide_id: str):
+    """Replace the full env set for the tide. Body: {"env": [{"key","value"}, ...]}."""
+    if not app.utils.permissions.Permissions.check_permission(flask.g.current_user.id, app.utils.permissions.Permissions.EDIT_TIDES):
+        return flask.jsonify({"success": False, "error": "Unauthorized"}), 403
+    tide = app.models.tide.Tide.query.filter_by(id=tide_id).first()
+    if not tide:
+        return flask.jsonify({"success": False, "error": "Tide not found"}), 404
+
+    incoming = flask.request.json.get('env') or []
+    # Validate & dedupe (last wins); drop blank keys silently.
+    merged: dict[str, str] = {}
+    for row in incoming:
+        key = (row.get('key') or '').strip()
+        if not key:
+            continue
+        if len(key) > 128:
+            return flask.jsonify({"success": False, "error": f"Key too long: {key[:20]}..."}), 400
+        merged[key] = str(row.get('value') if row.get('value') is not None else '')
+
+    # Replace: delete all current rows, then insert the new set.
+    app.models.tide.TideEnv.query.filter_by(tide_id=tide.id).delete()
+    for key, value in merged.items():
+        app.utils.extensions.db.session.add(app.models.tide.TideEnv(tide_id=tide.id, key=key, value=value))
+    app.utils.extensions.db.session.commit()
+
+    return flask.jsonify({
+        "success": True,
+        "env": [{"key": k, "value": v} for k, v in merged.items()],
+    })
 
 
 @admin_bp.get('/tide/<string:tide_id>/storage-mounts')

@@ -1,3 +1,4 @@
+import { RouterModule } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -28,7 +29,7 @@ import { JsonEditorComponent } from '../../../components/json-editor/json-editor
 @Component({
     selector: 'app-admin-tides',
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [CommonModule, FormsModule, TableModule, ButtonModule, TagModule, SkeletonModule, CardModule, ToastModule, ConfirmDialogModule, DialogModule, InputTextModule, InputNumberModule, TextareaModule, SelectModule, TranslateModule, TooltipModule, CheckboxModule, MultiSelectModule, JsonEditorComponent],
+    imports: [RouterModule, CommonModule, FormsModule, TableModule, ButtonModule, TagModule, SkeletonModule, CardModule, ToastModule, ConfirmDialogModule, DialogModule, InputTextModule, InputNumberModule, TextareaModule, SelectModule, TranslateModule, TooltipModule, CheckboxModule, MultiSelectModule, JsonEditorComponent],
     providers: [MessageService, ConfirmationService],
     templateUrl: './admin-tides.html'
 })

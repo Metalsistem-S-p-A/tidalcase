@@ -30,6 +30,12 @@ export interface Tide {
     open_mode?: 'user' | 'current' | 'tab' | 'window';
     connection_settings?: Record<string, any>;
     requires_credentials?: boolean;
+    env?: TideEnvVar[];
+}
+
+export interface TideEnvVar {
+    key: string;
+    value: string;
 }
 
 export interface TideInstance {
@@ -116,5 +122,13 @@ export class TideService {
             form.append('file[]', file);
         }
         return this.http.post<any>(`/api/instance/${instanceId}/files/uploads`, form);
+    }
+
+    getTideEnv(tideId: string): Observable<{ success: boolean; env: TideEnvVar[] }> {
+        return this.http.get<{ success: boolean; env: TideEnvVar[] }>(`/api/admin/tide/${tideId}/env`);
+    }
+
+    saveTideEnv(tideId: string, env: TideEnvVar[]): Observable<{ success: boolean; env: TideEnvVar[] }> {
+        return this.http.put<{ success: boolean; env: TideEnvVar[] }>(`/api/admin/tide/${tideId}/env`, { env });
     }
 }

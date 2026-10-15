@@ -26,6 +26,11 @@ export const appRoutes: Routes = [
                 canActivate: [adminGuard]
             },
             {
+                path: 'admin/tides/:id/env',
+                loadComponent: () => import('./pages/admin/tides/admin-tide-env').then(m => m.AdminTideEnv),
+                canActivate: [adminGuard]
+            },
+            {
                 path: 'admin/instances',
                 loadComponent: () => import('./pages/admin/instances/admin-instances').then(m => m.AdminInstances),
                 canActivate: [adminGuard]

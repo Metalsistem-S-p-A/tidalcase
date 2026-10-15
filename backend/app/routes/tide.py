@@ -393,23 +393,18 @@ def _request_instance_via_agent(agent, tide: app.models.tide.Tide, lang: str = '
         else:
             vnc_user = tide.vnc_user or "kasm_user"
             auth_header = base64.b64encode(f"{vnc_user}:{instance.vnc_password}".encode()).decode()
+            kasm_env = {
+                **tide_env,
+                "DISPLAY": ":1",
+                "VNC_PW": instance.vnc_password,
+                "VNC_USER": vnc_user,
+                **_locale_env(lang),
+                **_tz_env(),
+            }
             result = client.run_container(
                 image=image_name,
                 name=name,
-                env={
-                    "DISPLAY": ":1",
-                    "VNC_PW": instance.vnc_password,
-                    "VNC_USER": vnc_user,
-                    "KASM_SVC_AUDIO": "0",
-                    "KASM_SVC_AUDIO_INPUT": "0",
-                    "KASM_SVC_UPLOADS": "0",
-                    "KASM_SVC_GAMEPAD": "0",
-                    "KASM_SVC_WEBCAM": "0",
-                    "KASM_SVC_PRINTER": "0",
-                    "KASM_SVC_SMARTCARD": "0",
-                    **_locale_env(lang),
-                    **_tz_env(),
-                },
+                env=kasm_env,
                 mem_limit=tide.container_memory,
                 memswap_limit=tide.container_swap,
                 cpu_shares=int(tide.container_cores * 1024),

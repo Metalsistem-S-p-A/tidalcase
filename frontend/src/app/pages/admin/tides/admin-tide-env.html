@@ -1,0 +1,69 @@
+<p-toast></p-toast>
+<div class="p-6">
+    <div class="mb-6 flex items-start gap-3">
+        <p-button icon="pi pi-arrow-left" [outlined]="true" size="small" (onClick)="cancel()" [pTooltip]="'common.back' | translate"></p-button>
+        <div class="flex-1">
+            <p class="text-sm text-surface-500 mb-0.5" translate>admin.tides.env.subtitle</p>
+            <h1 class="text-3xl font-semibold text-surface-900 dark:text-surface-0">
+                {{ tideName() || '—' }}
+                <span class="text-base font-normal text-surface-500 ml-2">— Environment</span>
+            </h1>
+        </div>
+    </div>
+
+    @if (loading()) {
+        <p-skeleton height="20rem" styleClass="w-full"></p-skeleton>
+    } @else {
+        <p-card>
+            <div class="flex items-center gap-2 mb-4 flex-wrap">
+                <p-select
+                    [options]="presetOptions()"
+                    [(ngModel)]="selectedPreset"
+                    optionLabel="label"
+                    optionValue="value"
+                    [placeholder]="'admin.tides.env.addPreset' | translate"
+                    [filter]="true"
+                    styleClass="min-w-[280px]"
+                    [showClear]="true">
+                </p-select>
+                <p-button icon="pi pi-plus" severity="secondary" [outlined]="true" [disabled]="!selectedPreset()" (onClick)="addPreset()" [pTooltip]="'admin.tides.env.addPresetTooltip' | translate"></p-button>
+                <span class="text-surface-400">|</span>
+                <p-button icon="pi pi-plus" [label]="'admin.tides.env.addCustom' | translate" severity="secondary" [outlined]="true" (onClick)="addRow()"></p-button>
+                <div class="flex-1"></div>
+                <p-button [label]="'common.cancel' | translate" severity="secondary" [outlined]="true" (onClick)="cancel()"></p-button>
+                <p-button [label]="'common.save' | translate" icon="pi pi-save" [loading]="saving()" (onClick)="save()"></p-button>
+            </div>
+
+            <p-table [value]="rows()" [tableStyle]="{'min-width':'50rem'}" styleClass="p-datatable-sm" [trackByFn]="trackRow">
+                <ng-template #header>
+                    <tr>
+                        <th style="width: 25rem">{{ 'admin.tides.env.key' | translate }}</th>
+                        <th>{{ 'admin.tides.env.value' | translate }}</th>
+                        <th style="width: 3rem"></th>
+                    </tr>
+                </ng-template>
+                <ng-template #body let-row let-i="rowIndex">
+                    <tr>
+                        <td>
+                            <input pInputText class="w-full font-mono text-sm" [(ngModel)]="row.key" placeholder="KASM_SVC_AUDIO" />
+                            @if (row.description) {
+                                <p class="text-xs text-surface-500 mt-1 mb-0">{{ row.description }}</p>
+                            }
+                        </td>
+                        <td>
+                            <input pInputText class="w-full font-mono text-sm" [(ngModel)]="row.value" placeholder="0" />
+                        </td>
+                        <td>
+                            <p-button icon="pi pi-trash" severity="danger" [text]="true" (onClick)="removeRow(i)" [pTooltip]="'common.delete' | translate"></p-button>
+                        </td>
+                    </tr>
+                </ng-template>
+                <ng-template #emptymessage>
+                    <tr><td colspan="3" class="text-center text-surface-500 py-8">{{ 'admin.tides.env.empty' | translate }}</td></tr>
+                </ng-template>
+            </p-table>
+
+            <p class="text-xs text-surface-500 mt-4 mb-0">{{ 'admin.tides.env.hint' | translate }}</p>
+        </p-card>
+    }
+</div>

@@ -393,7 +393,18 @@
       "open_mode_user": "Scelta utente",
       "open_mode_new_tab": "Nuovo tab",
       "open_mode_same_tab": "Stesso tab",
-      "open_mode_new_window": "Nuova finestra"
+      "open_mode_new_window": "Nuova finestra",
+      "env": {
+        "subtitle": "Variabili d'ambiente",
+        "open": "Variabili d'ambiente",
+        "key": "Chiave",
+        "value": "Valore",
+        "addCustom": "Aggiungi riga",
+        "addPreset": "Aggiungi preset KasmVNC...",
+        "addPresetTooltip": "Aggiungi preset selezionato",
+        "empty": "Nessuna variabile d'ambiente definita per questa tide.",
+        "hint": "Queste variabili vengono passate al container all'avvio. VNC_PW, DISPLAY, VNC_USER e locale/TZ vengono sempre forzati a runtime per garantire il funzionamento."
+      }
     },
     "agents": {
       "editTitle": "Modifica agente",

@@ -36,6 +36,7 @@ class Tide(app.utils.extensions.db.Model):
     connection_settings = app.utils.extensions.db.Column(app.utils.extensions.db.JSON, nullable=True)
 
     agents = app.utils.extensions.db.relationship('Agent', secondary=tide_agents, lazy='select')
+    env_vars = app.utils.extensions.db.relationship('TideEnv', backref='tide', cascade='all, delete-orphan', lazy='select')
 
     def get_agents(self) -> list[str]:
         return [str(g.id) for g in self.agents]
@@ -52,3 +53,25 @@ class TideInstance(app.utils.extensions.db.Model):
     paused = app.utils.extensions.db.Column(app.utils.extensions.db.Boolean, nullable=False, default=False, server_default='false')
     created_at = app.utils.extensions.db.Column(app.utils.extensions.db.DateTime, server_default=sqlalchemy.text("CURRENT_TIMESTAMP"))
     updated_at = app.utils.extensions.db.Column(app.utils.extensions.db.DateTime, server_default=sqlalchemy.text("CURRENT_TIMESTAMP"), onupdate=datetime.datetime.now())
+
+
+class TideEnv(app.utils.extensions.db.Model):
+    """Container environment variables tied to a Tide.
+
+    Each row is one env var passed to the container at launch. Values set here
+    are MERGED with the runtime-computed ones (VNC_PW, DISPLAY, locale, TZ),
+    but the runtime ones win on key collision to avoid breaking the session.
+    """
+    __tablename__ = 'tide_env'
+    id = app.utils.extensions.db.Column(app.utils.extensions.db.Integer, primary_key=True, autoincrement=True)
+    tide_id = app.utils.extensions.db.Column(
+        app.utils.extensions.db.UUID(),
+        app.utils.extensions.db.ForeignKey('tide.id', ondelete='CASCADE'),
+        nullable=False,
+    )
+    key = app.utils.extensions.db.Column(app.utils.extensions.db.String(128), nullable=False)
+    value = app.utils.extensions.db.Column(app.utils.extensions.db.Text, nullable=False, default='', server_default='')
+
+    __table_args__ = (
+        app.utils.extensions.db.UniqueConstraint('tide_id', 'key', name='uq_tide_env_tide_key'),
+    )

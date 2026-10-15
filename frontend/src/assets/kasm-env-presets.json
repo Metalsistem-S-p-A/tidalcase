@@ -1,0 +1,18 @@
+{
+  "presets": [
+    { "key": "KASM_SVC_AUDIO",       "default": "0", "description": "Playback audio from the container (0=off, 1=on)" },
+    { "key": "KASM_SVC_AUDIO_INPUT", "default": "0", "description": "Capture microphone (0=off, 1=on)" },
+    { "key": "KASM_SVC_UPLOADS",     "default": "0", "description": "Enable file uploads via the KasmVNC panel (0=off, 1=on)" },
+    { "key": "KASM_SVC_GAMEPAD",     "default": "0", "description": "Expose host gamepads to the container (0=off, 1=on)" },
+    { "key": "KASM_SVC_WEBCAM",      "default": "0", "description": "Expose webcam device (0=off, 1=on)" },
+    { "key": "KASM_SVC_PRINTER",     "default": "0", "description": "Printer passthrough (0=off, 1=on)" },
+    { "key": "KASM_SVC_SMARTCARD",   "default": "0", "description": "Smartcard reader passthrough (0=off, 1=on)" },
+    { "key": "KASM_SVC_GPU",         "default": "0", "description": "Expose GPU inside the container (0=off, 1=on)" },
+    { "key": "KASM_RESTRICT_FILE_CHOOSER", "default": "0", "description": "Restrict the native file-chooser to the Downloads folder" },
+    { "key": "LANG",      "default": "en_US.UTF-8", "description": "Locale forced inside the container (overrides the session language)" },
+    { "key": "TZ",        "default": "Europe/Rome", "description": "Timezone forced inside the container" },
+    { "key": "HTTP_PROXY",  "default": "", "description": "HTTP proxy visible to apps in the container" },
+    { "key": "HTTPS_PROXY", "default": "", "description": "HTTPS proxy visible to apps in the container" },
+    { "key": "NO_PROXY",    "default": "", "description": "Comma-separated hosts bypassing the proxy" }
+  ]
+}

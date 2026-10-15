@@ -39,6 +39,7 @@
                         <td>
                             <div class="flex gap-1 justify-end">
                                 <p-button icon="pi pi-pencil" severity="secondary" [outlined]="true" size="small" [pTooltip]="'common.edit' | translate" (onClick)="openEdit(d)"></p-button>
+                                <p-button icon="pi pi-list" severity="secondary" [outlined]="true" size="small" [pTooltip]="'admin.tides.env.open' | translate" [routerLink]="['/admin/tides', d.id, 'env']"></p-button>
                                 <p-button icon="pi pi-trash" severity="danger" [outlined]="true" size="small" [pTooltip]="'common.delete' | translate" (onClick)="confirmDelete(d)"></p-button>
                             </div>
                         </td>
