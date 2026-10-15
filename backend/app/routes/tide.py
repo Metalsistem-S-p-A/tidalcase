@@ -372,6 +372,11 @@ def _request_instance_via_agent(agent, tide: app.models.tide.Tide, lang: str = '
 
     session_limit_s = (tide.session_time_limit or 0) * 60
 
+    # Dynamic env vars from the TideEnv table. Runtime values (VNC_PW,
+    # DISPLAY, VNC_USER, locale, TZ) override on key collisions so
+    # credentials always work even if someone sets those keys in admin UI.
+    tide_env = {ev.key: ev.value for ev in (tide.env_vars or [])}
+
     try:
         if is_guac_tide:
             result = client.run_container(
