@@ -17,6 +17,10 @@ def log(level: str, message: str):
             print(f"[{level}] | {timestamp} | {message}", flush=True)
 
         return log_entry
-    except Exception:
-        pass
+    except Exception as _e:
+        print(f"[logger] write failed: {_e!r}", flush=True)
+        try:
+            app.utils.extensions.db.session.rollback()
+        except Exception:
+            pass
     return None
