@@ -34,7 +34,7 @@
                 <p-button [label]="'common.save' | translate" icon="pi pi-save" [loading]="saving()" (onClick)="save()"></p-button>
             </div>
 
-            <p-table [value]="rows()" [tableStyle]="{'min-width':'50rem'}" styleClass="p-datatable-sm" [trackByFn]="trackRow">
+            <p-table [value]="rows()" [tableStyle]="{'min-width':'50rem'}" styleClass="p-datatable-sm">
                 <ng-template #header>
                     <tr>
                         <th style="width: 25rem">{{ 'admin.tides.env.key' | translate }}</th>
